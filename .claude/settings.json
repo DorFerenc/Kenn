@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(**/id_rsa*)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(supabase db reset --remote *)",
+      "Bash(supabase db push --remote *)"
+    ],
+    "ask": [
+      "Bash(git push *)",
+      "Bash(supabase * --remote *)",
+      "Bash(supabase link *)",
+      "Bash(supabase secrets *)",
+      "Bash(vercel *)",
+      "Bash(pnpm publish *)",
+      "Bash(npm publish *)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/format-changed.sh",
+            "timeout": 90
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/migration-guard.sh",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/require-learning-file.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
