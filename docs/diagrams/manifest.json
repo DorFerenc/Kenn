@@ -1,0 +1,18 @@
+{
+  "comment": "Which document(s) each diagram is embedded in. A value may be a string or a list. pnpm docs:gen checks the .mmd source matches a ```mermaid block in every document listed, so a diagram shown twice cannot diverge.",
+  "diagrams": {
+    "docs/diagrams/deployment.mmd": "docs/architecture.md",
+    "docs/diagrams/use-cases.mmd": "docs/architecture.md",
+    "docs/diagrams/sequence-auth-invite.mmd": "docs/architecture.md",
+    "docs/diagrams/sequence-task-realtime.mmd": "docs/architecture.md",
+    "docs/diagrams/sequence-mcp.mmd": "docs/architecture.md",
+    "docs/diagrams/sequence-coach.mmd": "docs/architecture.md",
+    "docs/diagrams/sequence-gov-update.mmd": "docs/architecture.md",
+    "docs/diagrams/domain-model.mmd": "docs/architecture.md",
+    "docs/diagrams/er.mmd": "docs/architecture.md",
+    "docs/diagrams/task-lifecycle.mmd": "docs/architecture.md",
+    "docs/diagrams/ci-pipeline.mmd": "docs/architecture.md",
+    "docs/diagrams/retro-loop.mmd": "docs/architecture.md",
+    "docs/diagrams/roadmap.mmd": ["docs/plan.md", "docs/plans/roadmap.md"]
+  }
+}

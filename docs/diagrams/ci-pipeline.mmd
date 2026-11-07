@@ -1,0 +1,16 @@
+flowchart LR
+  A["Branch + commits"] --> B["Open PR"]
+  B --> C["Typecheck, lint, Knip"]
+  C --> D["Vitest"]
+  D --> E["Supabase in CI:<br/>migrations + pgTAP"]
+  E --> F["KB validate"]
+  F --> G["Docs drift check"]
+  G --> H["Vercel preview +<br/>Playwright"]
+  H --> I["AI review agent"]
+  I --> J{"Human approves?"}
+  J -- no --> A
+  J -- yes --> K["Merge to main"]
+  K --> L["supabase db push<br/>to production"]
+  L --> M["Seed KB versions"]
+  M --> N["Vercel production deploy"]
+  N --> O["Smoke test + Sentry check"]

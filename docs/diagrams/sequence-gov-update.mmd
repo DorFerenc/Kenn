@@ -1,0 +1,22 @@
+sequenceDiagram
+  participant GA as GitHub Actions (weekly)
+  participant SRC as MoH / BTL page
+  participant AI as Claude API
+  participant GH as GitHub PR
+  actor P as Parent reviewer
+  participant CI as CI + deploy
+  participant DB as Postgres
+  GA->>SRC: Fetch every URL in sources
+  GA->>GA: Extract, normalize, hash
+  alt Hash unchanged
+    GA->>GA: Stop
+  else Changed
+    GA->>AI: Diff + affected KB items
+    AI-->>GA: Fields at risk + proposed YAML
+    GA->>GH: Open PR labelled guidance-change
+    P->>GH: Check source, edit, approve, merge
+    GH->>CI: Validate schema, bump versions
+    CI->>DB: Seed new KB versions
+    CI->>DB: Re-materialize open tasks
+    Note over DB: Done tasks keep their old version
+  end

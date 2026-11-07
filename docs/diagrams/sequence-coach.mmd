@@ -1,0 +1,23 @@
+sequenceDiagram
+  actor P as Parent
+  participant W as Coach route
+  participant G as Red-flag guard
+  participant X as Context builder
+  participant AI as Claude API
+  participant S as Service layer
+  P->>W: Message
+  W->>G: Check for red-flag terms
+  alt Red flag found
+    G-->>P: Static emergency card, no model call
+  else Normal
+    W->>X: Build context
+    X->>S: Phase KB items, open tasks, notes, past summaries
+    S-->>X: Minimal context
+    X->>AI: System + cached KB + context + message
+    AI-->>W: Answer + proposed_actions JSON
+    W->>W: Validate proposals with zod
+    W-->>P: Answer + action cards
+    P->>W: Tap Apply on a card
+    W->>S: Same call as the UI makes
+  end
+  W->>S: Save message and session summary

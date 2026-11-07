@@ -1,0 +1,118 @@
+erDiagram
+  HOUSEHOLD ||--|{ MEMBER : has
+  HOUSEHOLD ||--o| PREGNANCY : tracks
+  HOUSEHOLD ||--o{ CHILD : has
+  HOUSEHOLD ||--o{ TASK_INSTANCE : owns
+  HOUSEHOLD ||--o{ INVENTORY_ITEM : owns
+  HOUSEHOLD ||--o{ SHARE_GRANT : issues
+  HOUSEHOLD ||--o{ MCP_CLIENT : authorizes
+  HOUSEHOLD ||--o{ AUDIT_LOG : records
+  HOUSEHOLD ||--o{ COACH_SESSION : holds
+  CHILD ||--o{ MEASUREMENT : has
+  CHILD ||--o{ MEDICINE_LOG : has
+  CHILD ||--o{ ALLERGEN_LOG : has
+  CHILD ||--o{ MILESTONE_OBS : has
+  KB_ITEM ||--o{ TASK_INSTANCE : instantiates
+  INVENTORY_ITEM ||--o{ RECALL_MATCH : flagged_by
+  COACH_SESSION ||--o{ COACH_MESSAGE : contains
+  HOUSEHOLD ||--o{ INVITE : sends
+  MEMBER ||--o{ PUSH_SUBSCRIPTION : registers
+
+  HOUSEHOLD {
+    uuid id PK
+    text name
+    text country
+    text default_locale
+  }
+  MEMBER {
+    uuid household_id FK
+    uuid user_id FK
+    text role
+    text locale
+    text gender_form
+  }
+  PREGNANCY {
+    uuid id PK
+    uuid household_id FK
+    date lmp
+    date edd
+    text dating_method
+    int fetuses
+  }
+  CHILD {
+    uuid id PK
+    uuid household_id FK
+    date birth_date
+    int ga_at_birth_weeks
+    text birth_type
+    bool firstborn
+  }
+  KB_ITEM {
+    text id PK
+    int version PK
+    text phase
+    text category
+    jsonb window
+    jsonb applies_if
+    jsonb locales
+    text_array sources
+    date review_by
+  }
+  TASK_INSTANCE {
+    uuid id PK
+    uuid household_id FK
+    text kb_item_id FK
+    int kb_version FK
+    date due_start
+    date due_end
+    text status
+    uuid done_by FK
+    timestamptz done_at
+    text note
+  }
+  INVENTORY_ITEM {
+    uuid id PK
+    uuid household_id FK
+    text category
+    text name
+    int qty
+    text model
+    int price_ils
+    text status
+    text needed_by
+    text claimed_by
+  }
+  SHARE_GRANT {
+    uuid id PK
+    uuid household_id FK
+    text token_hash
+    text_array scopes
+    timestamptz expires_at
+    timestamptz revoked_at
+  }
+  MCP_CLIENT {
+    uuid id PK
+    uuid household_id FK
+    text client_name
+    text_array scopes
+    timestamptz last_used_at
+    timestamptz revoked_at
+  }
+  AUDIT_LOG {
+    bigint id PK
+    uuid household_id FK
+    text actor_type
+    uuid actor_id
+    text action
+    jsonb before
+    jsonb after
+    timestamptz at
+  }
+  MEDICINE_LOG {
+    uuid id PK
+    uuid child_id FK
+    text medicine
+    text dose_from_label
+    timestamptz given_at
+    uuid given_by FK
+  }

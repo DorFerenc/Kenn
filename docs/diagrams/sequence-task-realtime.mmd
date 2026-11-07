@@ -1,0 +1,18 @@
+sequenceDiagram
+  actor Y as Yarden (PWA)
+  participant W as Server action
+  participant S as Service layer
+  participant DB as Postgres (RLS)
+  participant RT as Realtime
+  actor D as Dor (PWA)
+  Y->>W: completeTask(taskId, note)
+  Note over Y: Optimistic UI, item ticked
+  W->>S: completeTask(ctx, taskId, note)
+  S->>DB: UPDATE task_instance (user JWT)
+  DB-->>S: Row returned, RLS passed
+  S->>DB: INSERT audit_log
+  S-->>W: TaskInstance
+  W-->>Y: Confirmed
+  DB-)RT: Change event
+  RT-)D: task_instance updated
+  Note over D: Today re-renders with Yarden's avatar

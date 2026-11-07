@@ -1,0 +1,21 @@
+sequenceDiagram
+  actor P as Parent
+  participant C as Claude (MCP client)
+  participant M as /mcp route
+  participant O as OAuth server
+  participant S as Service layer
+  participant DB as Postgres
+  C->>M: POST /mcp (no token)
+  M-->>C: 401 + resource metadata
+  C->>O: Dynamic client registration
+  C->>O: Authorize (PKCE)
+  O->>P: Kenn consent screen, pick scopes
+  P->>O: Approve read:timeline, write:tasks
+  O-->>C: Code, then access + refresh token
+  C->>M: tools/call complete_task (Bearer)
+  M->>M: Verify token, scope, household
+  M->>S: completeTask(ctx as MCP client)
+  S->>DB: UPDATE task_instance
+  S->>DB: INSERT audit_log(client=Claude)
+  S-->>M: Result
+  M-->>C: Tool result, labelled as data
