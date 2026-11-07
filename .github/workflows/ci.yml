@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Least privilege: CI only reads the repo. Nothing here deploys or writes.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Actions are pinned by commit SHA, not by tag: a tag can be moved.
+  # See docs/plan.md, section "Security" (supply chain).
+  NODE_VERSION: "24"
+  PYTHON_VERSION: "3.13"
+
+jobs:
+  check:
+    name: Typecheck, lint and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up pnpm
+        # Version comes from the `packageManager` field in package.json.
+        uses: pnpm/action-setup@9bbca1e9dc2902adb87e8780fe5c98796985a62d # v6.1.1
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Test
+        # The engine must be correct outside UTC too: a date bug west of
+        # Greenwich is the kind this project cannot afford.
+        run: TZ=America/Los_Angeles pnpm test
+
+      - name: Validate the knowledge base
+        run: pnpm kb:validate
+
+      - name: Docs drift
+        # Every docs/diagrams/*.mmd must still match the ```mermaid block it is
+        # embedded in, and a generator whose source has gained content must be
+        # wired up rather than silently skipped.
+        run: pnpm docs:gen
+
+      - name: Dead code
+        run: pnpm knip
+
+  watcher:
+    name: Gov watcher (Python)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: services/watcher
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dev dependencies
+        # Pinned to match pyproject.toml's [project.optional-dependencies].dev
+        run: python -m pip install --disable-pip-version-check 'ruff==0.17.4' 'pytest==9.2.0'
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Check formatting
+        run: ruff format --check .
+
+      - name: Test
+        run: python -m pytest -q

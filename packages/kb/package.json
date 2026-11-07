@@ -1,0 +1,23 @@
+{
+  "name": "@kenn/kb",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Git-versioned knowledge base: YAML guidance items, their zod schema and the validator.",
+  "exports": {
+    ".": "./schema.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "validate": "tsx scripts/validate.ts"
+  },
+  "dependencies": {
+    "js-yaml": "5.5.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3"
+  }
+}
