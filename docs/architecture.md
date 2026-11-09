@@ -699,29 +699,23 @@ Each package gets a short `CLAUDE.md` of its own (for example `packages/db/CLAUD
 
 **Skills (`.claude/skills/<name>/SKILL.md`):**
 
-| Skill             | Use when                      | Produces                                                                  |
-| ----------------- | ----------------------------- | ------------------------------------------------------------------------- |
-| `plan-feature`    | "Plan X", a new idea or issue | A plan file and roadmap steps                                             |
-| `implement-step`  | "Do step N"                   | Plan → your approval → code → tests → self-check, one step only           |
-| `review-code`     | "Review", before merge        | Findings checklist: TS/React/Next.js, Supabase/RLS, i18n/RTL, a11y, tests |
-| `write-migration` | Any schema change             | Migration + RLS + pgTAP + regenerated types                               |
-| `add-kb-item`     | New guidance content          | Validated YAML with sources in both languages                             |
-| `update-docs`     | End of every step             | Regenerated and edited docs, ADR if needed                                |
-| `retro`           | End of every session          | A learning file and proposed rule changes (next section)                  |
-| `consolidate`     | Monthly                       | Merged, pruned rules and skills under their size budgets                  |
+| Skill             | Use when                       | Produces                                                                                          |
+| ----------------- | ------------------------------ | ------------------------------------------------------------------------------------------------- |
+| `plan-feature`    | "Plan X", a new idea or issue  | A plan file and roadmap steps                                                                     |
+| `implement-step`  | "Do step N"                    | Plan → your approval → code → tests → self-check, one step only                                   |
+| `review-code`     | "Review", before merge         | Findings checklist: TS/React/Next.js, Supabase/RLS, i18n/RTL, a11y, tests                         |
+| `prune`           | Before a PR, or "this repeats" | Dead code deleted, duplicated knowledge collapsed, and a list of what was deliberately left alone |
+| `write-migration` | Any schema change              | Migration + RLS + pgTAP + regenerated types                                                       |
+| `add-kb-item`     | New guidance content           | Validated YAML with sources in both languages                                                     |
+| `update-docs`     | End of every step              | Regenerated and edited docs, ADR if needed                                                        |
+| `retro`           | End of every session           | A learning file and proposed rule changes (next section)                                          |
+| `consolidate`     | Monthly                        | Merged, pruned rules and skills under their size budgets                                          |
 
-Your existing plan-issue, run-issue and senior-review skills are built for Python and PyQt at work. Port their plan → approve → do → test → self-review loop into these repo skills rather than reusing them as they are.
-
-**Hooks and permissions (`.claude/settings.json`):**
-
-| Hook                          | Does                                                                                   |
-| ----------------------------- | -------------------------------------------------------------------------------------- |
-| After edits to `*.ts`/`*.tsx` | Prettier + ESLint on the changed file                                                  |
-| After edits to `migrations/`  | Regenerate DB types, remind to add the pgTAP test                                      |
-| On stop                       | Blocks ending the session if code changed and no learning file exists for this session |
-| Before shell commands         | Denies `git push --force`, remote `db reset` and reading `.env*`                       |
-
-Check the current Claude Code docs for exact hook event names and the agent and skill frontmatter when you scaffold; the structure above doesn't depend on them.
+**Hooks and permissions (`.claude/settings.json`):** four hooks and the
+permission guardrails, each described in
+[`.claude/README.md`](../.claude/README.md). They are not listed twice — the
+copy that lived here had already drifted from the real `settings.json`, which
+is what a second table of the same facts does.
 
 ## Self-improving loop
 
@@ -801,65 +795,35 @@ Generate whatever can be generated, check the rest in CI, and make "docs updated
 - [ ] `/retro` written, rule changes proposed in a separate commit
 - [ ] The roadmap step ticked in `docs/plans/roadmap.md`
 
-## Changes from the planning document
+## Corrections to the planning document
 
-Recorded at scaffold time (roadmap step 0, 2026-11-07). Each was verified against
-the registries or the current vendor documentation, not from memory. The reasoning
-for the first three is in `docs/adr/`.
+Recorded at scaffold time (roadmap step 0) and kept short: each was verified
+against a registry or current vendor documentation, not from memory. Where a
+correction had a real trade-off it became an ADR, and the ADR is the long form —
+it is not restated here.
 
-1. **TypeScript is pinned to 6.0.3, not the latest 7.0.2.** TypeScript 7 is the
-   Go-native rewrite and ships no programmatic compiler API, so
-   `typescript-eslint@8.72.1` declares `typescript: ">=4.8.4 <6.1.0"` and refuses
-   to load it. "Pin the latest stable version of each tool" would therefore have
-   left this project with no linter on its first day, and no `review-code` gate
-   after that. The rule is now "the latest version the type and lint toolchain
-   supports". **ADR-0002.**
+| #   | Correction                                                                                                                                                                                | Where the reasoning lives                                   |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| 1   | TypeScript is pinned to 6.0.3, not the latest 7.0.2: TypeScript 7 ships no compiler API, so `typescript-eslint` refuses to load it and "pin the latest" would have meant no linter at all | [ADR-0002](adr/0002-pin-typescript-6-for-lint-support.md)   |
+| 2   | `next lint` was removed in Next.js 16, so ESLint runs directly from the repository root over every workspace                                                                              | "Technology stack", above                                   |
+| 3   | Next.js 16 is Turbopack-only and fails the build on a custom webpack config, which is what Serwist needs — the known risk at step 6                                                       | [ADR-0004](adr/0004-nextjs-over-sveltekit.md)               |
+| 4   | Supabase CLI v3 is local by default, so a bare `db push` can no longer reach production                                                                                                   | [ADR-0003](adr/0003-supabase-cli-v3-conventions.md)         |
+| 5   | Permission `deny` rules are guardrails, not a security boundary                                                                                                                           | `.claude/README.md`, and `CLAUDE.md`                        |
+| 6   | `docs-drift.yml`, `deploy.yml` and `watcher.yml` are deliberately deferred: a workflow that can only pass vacuously reads as a gate it is not                                             | steps 1, 5 and 13 in [`plans/roadmap.md`](plans/roadmap.md) |
 
-2. **`next lint` was removed in Next.js 16.** ESLint runs directly from the repo
-   root over every workspace, with flat config in `eslint.config.mjs`. The stack
-   table's Quality row implied linting through Next.
+Two corrections are still open rather than settled:
 
-3. **Next.js 16 makes Turbopack the only bundler and fails the build on a custom
-   webpack config.** Serwist integrates through a webpack plugin, and
-   `@serwist/next@9.5.13` only claims `next >=14`. This is the most likely thing
-   to break at step 6 (PWA, offline emergency card), so it is written down here
-   rather than discovered then.
+- **"Use your auth provider's OAuth server, if it supports MCP clients" probably
+  will not hold.** The MCP authorization spec needs an OAuth 2.1 authorization
+  server with dynamic client registration. Supabase Auth is an identity provider
+  for Kenn's own users, not an authorization server issuing scoped tokens to
+  arbitrary third-party clients. The instinct — never hand-write the OAuth
+  server — is right; the named fallback is probably unavailable. A step 9
+  decision, tracked in [`decisions.md`](decisions.md).
 
-4. **Supabase CLI v3 is local by default, which strengthens the design.** A bare
-   `db push` can no longer reach production: hosted targets need `--remote`, and
-   unattended hosted changes need `--yes` or fail with
-   `HostedMutationConsentRequiredError`. `config.toml` uses `[local_smtp]`; the
-   old `[inbucket]` section is removed and breaks `supabase start`. `pg-delta` is
-   now the default diff engine, so declarative schema work uses
-   `supabase db schema declarative sync` rather than `db diff`. This directly
-   serves the rule that only the watcher and CI hold the service-role key.
-   **ADR-0003.**
-
-5. **"Use your auth provider's OAuth server, if it supports MCP clients" probably
-   will not hold.** The MCP authorization spec needs an OAuth 2.1 authorization
-   server with dynamic client registration. Supabase Auth is an identity provider
-   for Kenn's own users, not an authorization server issuing scoped tokens to
-   arbitrary third-party MCP clients. The instinct — never hand-write the OAuth
-   server — is right, but the named fallback is probably unavailable. This is an
-   open decision for step 9, recorded in `docs/decisions.md`, not resolved here.
-
-6. **Permission deny rules are guardrails, not a security boundary.** The hook
-   and permission table reads as enforcement. Claude Code's own documentation is
-   explicit that a `Bash` deny rule covers the invocation normally produced and is
-   not a boundary around the program: `Bash(git push --force *)` does not stop
-   `git -C . push --force`, and a `Read` deny rule does not stop `grep -r` or a
-   script that opens the file itself. `.claude/README.md` says so where someone
-   will read it.
-
-7. **`docs-drift.yml`, `deploy.yml` and `watcher.yml` are not in step 0.** Each
-   needs something that does not exist yet — a schema, a Vercel project, KB
-   sources — and a workflow that can only pass vacuously is worse than no
-   workflow, because it reads as a gate. They arrive at steps 1, 5 and 13, and are
-   listed there in `docs/plans/roadmap.md`.
-
-8. **knip does not gate `apps/web`'s declared dependencies yet.** `apps/web`
-   declares its real dependencies so the lockfile proves the version matrix
-   resolves together from the first commit, but imports none of them yet.
-   `knip.json` lists those in `ignoreDependencies`, and each entry is removed by
-   the step that starts using it. An entry still there at Gate A means a
-   dependency nothing uses.
+- **`apps/web` declares dependencies it does not yet import.** They are declared
+  so the lockfile proves the whole version matrix resolves together from the
+  first commit, and `knip.json` parks the unimported ones in
+  `ignoreDependencies`. Each entry comes off with the step that starts using it —
+  step 2 took `next-intl`, `tailwindcss`, `@tailwindcss/postcss` and `@kenn/ui`.
+  An entry still there at Gate A means a dependency nothing uses.

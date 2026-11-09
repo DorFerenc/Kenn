@@ -8,6 +8,13 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["src/**/*.ts", "lib/**/*.ts", "app/**/*.ts", "app/**/*.tsx"],
+  "include": [
+    "*.ts",
+    "i18n/**/*.ts",
+    "lib/**/*.ts",
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "next-env.d.ts"
+  ],
   "exclude": ["node_modules", ".next", "e2e"]
 }

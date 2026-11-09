@@ -53,8 +53,14 @@ flowchart LR
   enrolment all need the account, and `deploy.yml` needs Vercel. Those are
   what keeps this step unticked.
 
-- [ ] **2.** i18n skeleton (Hebrew and English, RTL and LTR, gender forms) and the
+- [x] **2.** i18n skeleton (Hebrew and English, RTL and LTR, gender forms) and the
       design-system tokens. Wire the i18n coverage generator into `docs:gen`.
+      _(2026-11-09 — `/he` and `/en` prerendered with `dir` and `lang` from the
+      locale; 28 ICU keys in both locales with Hebrew gender forms; tokens in
+      `packages/ui/src/tokens.css` with a WCAG contrast test in both themes and a
+      scan that fails on a hard-coded colour or a physical CSS property; the
+      coverage generator fails the gate on a key in one locale only, invalid ICU,
+      a missing gender branch or a dropped placeholder. 206 tests.)_
 - [x] **3.** KB schema with `locales` and `applies_if`; pregnancy items in both
       languages; CI validation. _(2026-11-09 — discriminated union on `kind`, five
       refinements including the ADR-0005 safety veto, 20 schema tests, 21 items
@@ -68,7 +74,10 @@ flowchart LR
 
 - [ ] **5.** Onboarding wizard, Today and Checklist, realtime sync, production
       deploy, PWA on both phones. Playwright arrives here; `eslint-config-next`
-      too. Start removing entries from `knip.json`'s `ignoreDependencies`.
+      too. Replaces the step-2 harness at `app/[locale]/page.tsx`, and reads
+      `member.locale` and `member.gender_form` through the service layer instead
+      of defaulting to Hebrew and the neutral plural. Takes `@supabase/supabase-js`,
+      `zod` and the workspace packages off `knip.json`'s `ignoreDependencies`.
 - [ ] **6.** Reminders: Web Push, the Sunday digest and the ICS calendar feed.
       **Risk:** Serwist integrates through a webpack plugin and Next.js 16 fails
       the build on a custom webpack config. Verify early.

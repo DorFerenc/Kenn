@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Kenn (\u05e7\u05b5\u05df) \u2014 Hebrew + English PWA that plans pregnancy, birth and the first year for Israeli families.",
+  "description": "Kenn (קֵן) — Hebrew + English PWA that plans pregnancy, birth and the first year for Israeli families.",
   "packageManager": "pnpm@12.18.0",
   "engines": {
     "node": ">=24.0.0"
@@ -28,7 +28,7 @@
     "db:test": "pnpm --filter @kenn/db db:test",
     "kb:validate": "pnpm --filter @kenn/kb validate",
     "docs:gen": "node scripts/docs-gen.mjs",
-    "check": "pnpm check:private && pnpm lint && pnpm typecheck && pnpm docs:gen && pnpm format:check && pnpm test && pnpm kb:validate && pnpm knip",
+    "check": "pnpm check:private && pnpm lint && pnpm typecheck && pnpm docs:gen && pnpm format:check && pnpm test && pnpm kb:validate && pnpm knip && pnpm --filter @kenn/web build",
     "check:private": "node scripts/check-private.mjs",
     "check:twice": "node scripts/check-stable.mjs",
     "hooks:install": "git rev-parse --git-dir > /dev/null 2>&1 && git config core.hooksPath .githooks || true",
@@ -36,6 +36,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@formatjs/icu-messageformat-parser": "3.5.22",
     "eslint": "10.14.0",
     "eslint-config-prettier": "10.1.8",
     "globals": "17.14.0",

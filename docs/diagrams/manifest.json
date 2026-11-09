@@ -13,6 +13,6 @@
     "docs/diagrams/task-lifecycle.mmd": "docs/architecture.md",
     "docs/diagrams/ci-pipeline.mmd": "docs/architecture.md",
     "docs/diagrams/retro-loop.mmd": "docs/architecture.md",
-    "docs/diagrams/roadmap.mmd": ["docs/plan.md", "docs/plans/roadmap.md"]
+    "docs/diagrams/roadmap.mmd": "docs/plans/roadmap.md"
   }
 }

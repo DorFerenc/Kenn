@@ -117,28 +117,20 @@ Hebrew and English ship together in v1, both complete: UI, KB content, notificat
 
 ## Stack and architecture
 
-TypeScript end to end, because the schedule engine must compute identical dates in the UI, the API and the MCP server. Python only for the gov watcher, where scraping and diffing are easier.
+TypeScript end to end, because the schedule engine must compute identical dates
+in the UI, the API and the MCP server. Python only for the gov watcher, where
+scraping and diffing are easier.
 
-| Layer         | Choice                                                                                  | Why                                                          |
-| ------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Frontend      | Next.js (App Router) + Tailwind + shadcn/ui, PWA via Serwist                            | Radix primitives support RTL; one repo for UI, API and MCP   |
-| Database      | Supabase Postgres, Frankfurt region                                                     | RLS, realtime and backups built in; low latency from Israel  |
-| Auth          | Supabase Auth: Google or email magic link, TOTP MFA required                            | No passwords to leak; MFA because this is health data        |
-| Partner sync  | Supabase Realtime on household tables                                                   | One parent ticks, the other's screen updates                 |
-| Files         | Supabase Storage, private bucket, signed URLs                                           | Scans and results never public                               |
-| Jobs          | Supabase pg\_cron for reminders; GitHub Actions for the gov watcher                     | No servers to run                                            |
-| Notifications | Web Push (VAPID) + Sunday email digest                                                  | iOS push works only after "Add to Home Screen"               |
-| MCP           | Remote MCP server (official TypeScript SDK, Streamable HTTP) as a route of the same app | Same auth, same RLS, same engine                             |
-| AI            | Claude API, server-side only, prompt caching for the KB                                 | Key never reaches the browser                                |
-| Hebrew dates  | @hebcal/core                                                                            | Brit day 8, pidyon haben day 31, Shabbat                     |
-| Content       | `/content/*.yaml` in the repo, schema-validated in CI                                   | Git gives review, diff and history for every guidance change |
-| Tests         | Vitest (engine), pgTAP (RLS), Playwright (flows)                                        | RLS tests are the security tests                             |
+The UI, share pages, MCP and the coach all call one service layer with the
+user's token, so RLS guards AI exactly as it guards you. Guidance enters only
+through a merged PR.
 
-See `docs/diagrams/deployment.mmd` for the deployment diagram (clients, app, Supabase, content pipeline), rendered in `docs/architecture.md`, section "Deployment".
-
-The UI, share pages, MCP and the coach all call one service layer with the user's token, so RLS guards AI exactly as it guards you. Guidance enters only through a merged PR.
-
-SvelteKit is a fine, lighter alternative to Next.js; pick whichever you'll enjoy maintaining. Your gym tracker needs the same auth + MCP skeleton, so build it once as a template.
+**The stack table, with the version pinned for each tool and the reason it is
+that version, lives in [`architecture.md`](architecture.md#technology-stack).**
+It is not repeated here: two tables of versions disagree within a month. The
+framework choice is settled in
+[ADR-0004](adr/0004-nextjs-over-sveltekit.md) — Next.js, on the MCP and Radix
+integration surface.
 
 ## Data model
 
@@ -368,100 +360,18 @@ Simple means one screen answers "what do we need to do now"; everything else is 
 - **Notifications:** at most one push a day, grouped, plus the Sunday digest. A window opening and a window closing in 3 days are the only push triggers.
 - **Beautiful** comes from a small design system set once: one accent colour, warm neutrals, 8-pt spacing, one illustration style for the weekly cards. Settle it before the second screen, not after the tenth.
 
-## Roadmap
+## Roadmap, decisions and open questions
 
-A bootstrap step, then seventeen steps in three releases, one Claude Code session each. Kenn is useful to you both after step 5; everything after that is additive.
+These three were kept here while this document was the only one. They are now
+maintained in the repository, and a second copy of a roadmap is a roadmap that
+disagrees with the real one:
 
-```mermaid
-flowchart LR
-  W0["Week 0<br/>accounts, tools, decisions"] --> S0["Step 0<br/>bootstrap repo + AI system"]
-  S0 --> R1["Release 1<br/>steps 1–8<br/>pregnancy for you two"]
-  R1 --> G1{"Gate A<br/>both use it daily<br/>for 2 weeks"}
-  G1 --> R2["Release 2<br/>steps 9–13<br/>AI + birth mode"]
-  R2 --> G2{"Gate B<br/>birth mode tested<br/>by week 34"}
-  G2 --> R3["Release 3<br/>steps 14–17<br/>the baby year"]
-  R3 --> G3{"Gate C<br/>public-launch checks"}
-```
-
-**Start here this week (things only you can do):**
-
-- [ ] Confirm the current week and ultrasound EDD, and put the next test window in a shared note now.
-- [ ] Create a private GitHub repo named `kenn` (empty, no README).
-- [ ] Create accounts: Supabase (Frankfurt region), Vercel, and the Anthropic Console with a monthly spend cap (the key is first needed at step 11).
-- [ ] Install locally: Node LTS, pnpm, Docker, the Supabase CLI and Claude Code.
-- [ ] Decide Next.js (the default) or SvelteKit, and the second parent's role.
-- [ ] Re-export the shopping list as CSV UTF-8 and upload it to this project.
-- [ ] Run the name checks (trademark, stores, domain) and buy the domain.
-
-**Step 0: bootstrap (the first session).** Create the monorepo skeleton with empty packages, `CLAUDE.md`, the `.claude/` agents and skills, `docs/` (the Plan tab as `docs/plan.md`, the Engineering tab as `docs/architecture.md`, `docs/decisions.md`, `docs/plans/roadmap.md`, `docs/learnings/`), and a CI workflow with lint and typecheck. No app code. This step comes first so every later session already runs inside the plan → review → docs → retro loop.
-
-**Release 1: pregnancy, for you two**
-
-1. Repo, Supabase, auth with MFA, `household` + `member`, RLS and the first pgTAP test.
-2. i18n skeleton (Hebrew and English, RTL and LTR, gender forms) and the design-system tokens.
-3. KB schema with `locales` and `applies_if`; pregnancy items in both languages; CI validation.
-4. Schedule engine: anchors, offsets, Hebrew calendar, special rules; Vitest with known dates.
-5. Onboarding wizard, Today and Checklist, realtime sync, production deploy, PWA on both phones.
-6. Reminders: Web Push, the Sunday digest and the ICS calendar feed.
-7. Safety center v1: offline emergency card, red-flag cards, safe-sleep and shelter checklists, car automation guide.
-8. Things: the recommended catalogue and build-your-own list, budget, gift registry; CSV import
-   as a convenience. Splits into 8a (mechanism) and 8b (content) — see
-   [`plans/recommended-lists.md`](plans/recommended-lists.md).
-
-**Release 2: AI and birth (before week 34)**
-
-9. MCP server with read tools and OAuth; connect Claude.
-10. MCP write tools, audit log, undo, "revoke all".
-11. Coach v1: weekly check-in and voice capture, proposals as tap-to-apply cards.
-12. Birth mode: hospital bag, contraction timer, kick counter, "we're going" message.
-13. Gov watcher with the PR flow, plus recall matching.
-
-**Release 3: the baby year**
-
-14. Baby phase: vaccines, Tipat Halav, milestones with corrected age, growth curves, medicine and allergen logs, childproofing by age, brit and pidyon haben rules.
-15. Sharing: family role, caregiver handoff, expiring links.
-16. Check-ins for both parents, the PDF summary for the pediatrician.
-17. Documents in private storage.
-
-**Gate before any other family signs up:** clinical review of the KB, privacy policy and legal review, per-household encryption, Arabic, an external security review, and 3 months of you two using it daily.
-
-**Pacing:** alongside a full-time job and studies, plan on about two sessions a week. That puts Release 1 roughly 5 weeks after step 0 and Release 2 about 3 weeks after that. Aim for Release 1 by week 30, Release 2 by week 34 and step 14 before the birth; if the dates don't fit, recalculate from your EDD before starting.
-
-**If you fall behind,** cut Release 1 to steps 0, 1, 3, 4, 5 and the emergency card from step 7. That is the smallest version that still keeps the two of you in sync on every window.
-
-**Every later session starts with the same prompt:**
-
-```text
-Kenn, next session. Read CLAUDE.md, docs/plans/roadmap.md, docs/decisions.md and the latest file in docs/learnings/.
-Run /implement-step for the next unticked step only: propose the plan, wait for my approval, build, test,
-run the reviewer agent, /update-docs, then /retro. End with a conclusion: decided, open, next.
-```
-
-## Open decisions
-
-Settle these before step 1; the first one sets the deadline for everything.
-
-- [ ] What week are you in, and what's the ultrasound-corrected EDD? That dates every window and decides how much of steps 1–6 fits before the next test.
-- [ ] Next.js or SvelteKit?
-- [ ] Is the second parent co-building? A natural split: one of you owns the engine and backend, the other owns the KB content review and UX, and you review each other's PRs.
-- [ ] Store medical documents at all, or keep them in the health-fund apps and only link? Not storing them removes the most sensitive data.
-- [ ] Ever open it to other families? "No" keeps the legal work at zero; "maybe" only requires keeping the multi-tenant schema, which you're doing anyway.
-- [ ] Monthly budget ceiling for hosting plus AI.
-
-* [ ] Name: Kenn, after the trademark, store and domain checks?
-* [ ] Who are the first 5 test families outside your own (an IVF family, olim, a reservist family)?
-* [ ] Which pediatrician and midwife would review the KB before a public launch?
-* [ ] Israel-only first, or design the country pack from day one?
-
-## Decision log
-
-Each planning chat ended with a conclusion here, newest first. **The repo now exists, so [`docs/decisions.md`](decisions.md) is the live log from step 0 onward**; this table is kept as the historical record and the step 0 row is its last entry.
-
-| Date                | Decided                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Open                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Next                                                                                                                                   |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-11-07 (step 0) | Monorepo scaffold green on Node 24 (`pnpm check`: lint, typecheck, format, Vitest, `kb:validate`, `docs:gen`, knip; ruff and pytest for the watcher). 5 agents, 8 skills, 3 hooks, all exercised. TypeScript pinned to 6.0.3 not 7.0.2 — TS 7 ships no compiler API so typescript-eslint cannot load it, and "pin the latest" would have meant no linter (ADR-0002). Supabase CLI v3 adopted, local by default (ADR-0003). Next.js over SvelteKit, settled (ADR-0004). Hard rules change only via an ADR, never a retro (ADR-0001). `docs/plan.md` and `docs/architecture.md` are now the source of truth. `pnpm docs:gen` verifies all 14 diagram embeddings against their `.mmd` source. Supply-chain settings explicit: `minimumReleaseAge: 1440`, `allowBuilds` all-denied, Actions pinned by SHA. `docs-drift.yml`, `deploy.yml` and `watcher.yml` deferred to steps 1, 1 and 13. | Current week and ultrasound EDD, and the Supabase, Vercel and Anthropic accounts — both block step 1. Which OAuth 2.1 authorization server for MCP: Supabase Auth is an identity provider, not an AS with dynamic client registration, so the plan's fallback probably does not apply (step 9). Serwist on Next.js 16, which fails the build on a custom webpack config (step 6 risk). The shopping-list CSV is still unrecoverable — ASCII with 2,148 literal `?` bytes and zero Hebrew characters; needs a Google Sheets CSV download (blocks step 8). the second parent's role. | Step 1: Supabase project, auth with MFA, `household` + `member`, RLS and the first pgTAP test, plus `deploy.yml` and `docs-drift.yml`. |
-| 2026-11-06 (review) | Step 0 bootstrap added before step 1; build order became the Roadmap with gates A–C; KB items carry `locales` and `applies_if`; `invite` and `push_subscription` tables added; use a maintained OAuth server for MCP, never hand-written; a session prompt template for every build session.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Same as below                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Week 0 checklist, then step 0 in a new chat                                                                                            |
-| 2026-11-06          | Name Kenn. Next.js + Supabase, TypeScript monorepo, Python watcher. KB in git, human-approved. No E2EE in v1. Hebrew + English at launch. Safety center as fixed content. AI instructions, agents and skills live in the repo and improve only through approved retros.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Current week / EDD; Next.js vs SvelteKit; the second parent's role; trademark check                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Step 1: scaffold the repo, auth and RLS                                                                                                |
+| What                                        | Where it lives now                                                    |
+| ------------------------------------------- | --------------------------------------------------------------------- |
+| The build order, steps 0–17 and gates A–C   | [`plans/roadmap.md`](plans/roadmap.md) — `/update-docs` ticks it      |
+| What was decided each session, newest first | [`decisions.md`](decisions.md)                                        |
+| What is still open, and who it waits on     | [`decisions.md`](decisions.md), the **Open** list of the newest entry |
+| A decision with a real trade-off            | [`adr/`](adr/), one file each                                         |
 
 ## Sources
 

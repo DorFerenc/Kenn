@@ -88,6 +88,10 @@ touches `packages/db/`, `apps/web/app/api/`, `apps/web/lib/services/` or
 Then either fix the finding, or record it in the step's conclusion as accepted
 with a reason. Critical and High findings are not accepted — they are fixed.
 
+Run `/prune` as well when the step added more code than it needed to — a third
+near-identical branch, a helper that already existed elsewhere, an export
+nothing imports. It commits separately from the feature.
+
 ## Phase 6 — Document
 
 Run `/update-docs`. It regenerates what is generated, updates the diagrams the

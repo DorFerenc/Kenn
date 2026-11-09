@@ -3,14 +3,19 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Design tokens, shadcn/ui components and RTL helpers shared by the app.",
+  "description": "Design tokens, RTL helpers and the locale vocabulary shared by the app.",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./tokens.css": "./src/tokens.css"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
+  "dependencies": {
+    "@kenn/engine": "workspace:*"
+  },
   "devDependencies": {
+    "@types/node": "26.6.6",
     "typescript": "6.0.3"
   }
 }

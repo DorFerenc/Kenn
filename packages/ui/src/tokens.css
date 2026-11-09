@@ -1,0 +1,147 @@
+/*
+ * Kenn design tokens — the single source of truth for colour, spacing, type and
+ * radius. Settled at roadmap step 2, before the second screen existed.
+ *
+ * Read this with packages/ui/CLAUDE.md: "a component that hard-codes a colour or
+ * a spacing value is a bug". `tokens.test.ts` enforces that, and also enforces
+ * the contrast ratios below, in both themes.
+ *
+ * Three things to know before adding a token:
+ *
+ * 1. Colours are HEX, not oklch. Not fashion: a hex literal lets
+ *    `contrast.ts` compute a WCAG ratio in thirty auditable lines, so the
+ *    contrast gate is a real test rather than a promise. Wider gamut can
+ *    supersede this when the test can follow it.
+ * 2. Semantic names alias base colours; they do not add new ones. A task
+ *    window's three states ARE the neutral/success/danger triple, and an
+ *    evidence badge IS one of the text colours. Four more hexes would be four
+ *    more things to keep accessible.
+ * 3. Dark mode is one block, keyed off `prefers-color-scheme`. It is the night
+ *    default and carries no toggle yet; a manual override arrives with the
+ *    settings screen, not before it is needed.
+ */
+
+@theme {
+  /* Drop Tailwind's default palette entirely. Without this, `bg-red-500` and
+     `text-white` still compile — a hard-coded colour that no scan for `#rrggbb`
+     can see, with no dark-mode override and no row in the contrast table. The
+     tokens below are then the only colours that exist, which is a stronger
+     guarantee than any check. */
+  --color-*: initial;
+
+  /* ---------------------------------------------------------------- type */
+  /* Heebo: Roboto's Hebrew companion, nine weights, full Hebrew coverage.
+     `--font-heebo` is set by next/font in the app layout; the quoted name and
+     the system stack are the fallback when it is not. */
+  --font-sans:
+    var(--font-heebo, 'Heebo'), system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.5;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.5;
+  --text-base: 1rem;
+  --text-base--line-height: 1.6;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.5;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.4;
+  --text-2xl: 1.75rem;
+  --text-2xl--line-height: 1.3;
+  --text-3xl: 2.25rem;
+  --text-3xl--line-height: 1.2;
+
+  /* ------------------------------------------------------------- spacing */
+  /* The 8-pt grid, enforced by arithmetic rather than by review: Tailwind
+     multiplies this, so `p-1` is 8 px and `gap-3` is 24 px. `-0.5` (4 px) is
+     the only sub-8 step the system admits. */
+  --spacing: 0.5rem;
+
+  /* 48 px: the minimum tap target. The app is used with one thumb at 3 a.m. */
+  --size-tap: 3rem;
+
+  /* ------------------------------------------------------------- radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 1rem;
+  --radius-full: 9999px;
+
+  /* ------------------------------------------------------- base colours */
+  /* Warm neutrals and one accent. Light theme values; the dark block below
+     overrides the same names. */
+  --color-surface: #fbf8f4;
+  --color-surface-raised: #ffffff;
+  --color-surface-sunken: #f3ede5;
+
+  /* `border` is a hairline and is decorative: it conveys no state, so WCAG
+     1.4.11 does not apply to it. `border-strong` does convey state — it is the
+     unopened task window — so it is held at 3:1 and tested. */
+  --color-border: #e2d8cb;
+  --color-border-strong: #948778;
+
+  --color-text: #1f1a15;
+  --color-text-muted: #6b5f52;
+
+  /* One accent. #a4451c reaches 5.76:1 on the surface AND 6.09:1 under white,
+     so it works as text and as a fill without a second token. */
+  --color-accent: #a4451c;
+  --color-on-accent: #ffffff;
+
+  --color-success: #166534;
+  --color-danger: #b91c1c;
+  --color-warning: #92400e;
+
+  --color-focus: #a4451c;
+
+  /* ---------------------------------------------------- semantic aliases */
+  /* A task window's bar: grey before it opens, green inside it, red after it
+     closed. See packages/ui/CLAUDE.md, "Shape". */
+  --color-window-before: var(--color-border-strong);
+  --color-window-inside: var(--color-success);
+  --color-window-after: var(--color-danger);
+
+  /* An evidence badge on a recommendation. `custom` means the household set it
+     themselves, so it carries no claim and reads as muted. */
+  --color-evidence-strong: var(--color-success);
+  --color-evidence-moderate: var(--color-accent);
+  --color-evidence-weak: var(--color-warning);
+  --color-evidence-custom: var(--color-text-muted);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-surface: #17130f;
+    --color-surface-raised: #211b16;
+    --color-surface-sunken: #0f0c0a;
+
+    --color-border: #3a312a;
+    --color-border-strong: #7d7164;
+
+    --color-text: #f5efe8;
+    --color-text-muted: #b3a696;
+
+    /* #e8814f is 6.76:1 on the dark surface and 6.76:1 under the surface
+       colour, so the accent again serves as both text and fill. `on-accent`
+       flips to near-black, which is the one token that changes kind. */
+    --color-accent: #e8814f;
+    --color-on-accent: #17130f;
+
+    --color-success: #4ade80;
+    --color-danger: #fca5a5;
+    --color-warning: #fbbf24;
+
+    --color-focus: #e8814f;
+  }
+}
+
+/*
+ * RTL helper, as CSS rather than a component: a run of digits inside Hebrew
+ * text. A phone number, a week count, a contraction timer and the emergency
+ * card's numbers all stay left-to-right inside an RTL paragraph, and `isolate`
+ * stops the surrounding Hebrew from reordering them.
+ */
+@utility numeric {
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums;
+}

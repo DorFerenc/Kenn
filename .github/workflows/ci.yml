@@ -27,6 +27,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # check:private reads the repository's authors from `git log` to find
+          # a real name in tracked content. The default shallow clone has one
+          # commit, and on a pull_request that commit's author is GitHub's own
+          # merge bot — so the name check would scan for nobody and pass. It
+          # now fails loudly when it finds no identities, and this is why.
+          fetch-depth: 0
 
       - name: Set up pnpm
         # Version comes from the `packageManager` field in package.json.
@@ -43,8 +50,8 @@ jobs:
 
       - name: No private data or key material
         # No names, no real email addresses, no key shapes. See
-        # scripts/check-private.mjs — it reads this clone's git identity at
-        # runtime rather than committing a denylist of names.
+        # scripts/check-private.mjs — it reads this clone's git identity and
+        # history at runtime rather than committing a denylist of names.
         run: pnpm check:private
 
       - name: Lint

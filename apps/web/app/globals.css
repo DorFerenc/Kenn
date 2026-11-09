@@ -1,0 +1,32 @@
+/*
+ * The app's only stylesheet entry point.
+ *
+ * Tailwind first, then Kenn's tokens: the token file is a `@theme` block, so
+ * importing it after Tailwind is what turns each token into a utility class.
+ * Nothing below restates a value from it.
+ */
+
+@import 'tailwindcss';
+@import '@kenn/ui/tokens.css';
+
+/*
+ * `dir` is set on <html> by the locale layout, and everything else follows from
+ * CSS logical properties. There is no RTL stylesheet and there must never be
+ * one: a mirrored copy of the styles is a second thing to keep correct.
+ */
+html {
+  color-scheme: light dark;
+}
+
+body {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Visible focus, in both themes, for a keyboard and for a screen magnifier. */
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
