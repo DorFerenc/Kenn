@@ -9,9 +9,16 @@
  *      Supabase publishable/secret keys, OpenAI-style keys.
  *   2. Email addresses outside the fixture domains. Kenn's tests and seed data
  *      use .test domains on purpose; a real address is a mistake.
- *   3. Whoever is configured in this clone's git identity, read at runtime from
- *      `git config`. So it catches an author's own name or address appearing in
- *      tracked content without that identity ever being committed.
+ *   3. Whoever has authored or committed in this clone, read at runtime from
+ *      `git config` and `git log`. So it catches an author's own name, GitHub
+ *      handle or address appearing in tracked content, without that identity
+ *      ever being committed.
+ *
+ *      `git config` alone was not enough. In a Claude Code cloud session the
+ *      configured name is "Claude", which this file correctly ignores as a bot
+ *      — so the check that was verified by planting a name did nothing in the
+ *      environment where most of the writing now happens. `git log` carries the
+ *      real identities in any clone with history, including CI.
  *
  * Household data never belongs in git at all: see docs/architecture.md and
  * packages/db/CLAUDE.md on seed.sql being fake-household-only.
@@ -30,6 +37,19 @@ const FIXTURE_DOMAINS = [
 ];
 
 const SECRET_PATTERNS = [
+  // Israeli personal data the project rules name explicitly: no bank details,
+  // and a household's own phone numbers belong in Postgres, not in git. The
+  // emergency card's public numbers (101, 100) are three digits and unaffected.
+  [/\b05\d[-\s]?\d{7}\b/, 'an Israeli mobile number'],
+  [/\bIL\d{2}[-\s]?\d{19}\b/, 'an Israeli IBAN'],
+  // A home directory names its user.
+  [
+    /\/(?:home|Users)\/(?!root\b|user\b|runner\b|ubuntu\b|node\b|vscode\b)[A-Za-z0-9._-]{2,}/,
+    'a path containing a username',
+  ],
+  // A hosted Supabase project reference. Infrastructure identity belongs in the
+  // deployment's environment, not in the repository.
+  [/\bhttps:\/\/[a-z]{20}\.supabase\.(?:co|in)\b/, 'a hosted Supabase project reference'],
   [/eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}/, 'a JWT'],
   [/-----BEGIN [A-Z ]*PRIVATE KEY-----/, 'a private key block'],
   [/\bAKIA[0-9A-Z]{16}\b/, 'an AWS access key id'],
@@ -57,32 +77,67 @@ function trackedFiles() {
     .filter((f) => !SKIP.some((re) => re.test(f)));
 }
 
-function gitIdentity() {
-  const read = (key) => {
-    try {
-      return execFileSync('git', ['config', '--get', key], { encoding: 'utf8' }).trim();
-    } catch {
-      return '';
-    }
+/** Bots and placeholders. These are not people, so they are not identities. */
+const GENERIC =
+  /^(claude|claude code|github[- ]actions(\[bot\])?|dependabot(\[bot\])?|ci|root|unknown|your name|user)$/i;
+const BOT_EMAIL = /@(anthropic\.com|users\.noreply\.github\.com|github\.com)$/i;
+
+function git(args) {
+  try {
+    return execFileSync('git', args, { encoding: 'utf8' }).trim();
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Everyone this clone knows about: the configured identity, plus every author
+ * and committer in the history. Read at runtime and never written anywhere, so
+ * the guard still carries no list of names.
+ */
+function gitIdentities() {
+  const found = new Map();
+  const addName = (name, what) => {
+    // A full name has a space; a single word is too likely to be an ordinary
+    // English word appearing in prose.
+    if (name && name.includes(' ') && !GENERIC.test(name)) found.set(name, what);
   };
-  const out = [];
-  const name = read('user.name');
-  const email = read('user.email');
-  // Ignore the placeholder identities a CI runner or an agent uses.
-  const generic = /^(claude|github[- ]actions|ci|root|unknown|your name)$/i;
-  if (name && name.includes(' ') && !generic.test(name))
-    out.push({ value: name, what: 'the git user.name configured in this clone' });
-  if (
-    email &&
-    !generic.test(email) &&
-    !FIXTURE_DOMAINS.some((d) => email.endsWith(`@${d}`))
-  )
-    out.push({ value: email, what: 'the git user.email configured in this clone' });
-  return out;
+  const addEmail = (email, what) => {
+    if (!email || GENERIC.test(email) || BOT_EMAIL.test(email)) return;
+    if (FIXTURE_DOMAINS.some((d) => email.endsWith(`@${d}`))) return;
+    found.set(email, what);
+  };
+
+  addName(
+    git(['config', '--get', 'user.name']),
+    'the git user.name configured in this clone',
+  );
+  addEmail(
+    git(['config', '--get', 'user.email']),
+    'the git user.email configured in this clone',
+  );
+
+  for (const line of git(['log', '--format=%an%x00%ae%x00%cn%x00%ce']).split('\n')) {
+    const [authorName, authorEmail, committerName, committerEmail] = line.split('\0');
+    addName(authorName, 'the name of an author in this repository history');
+    addName(committerName, 'the name of a committer in this repository history');
+    addEmail(authorEmail, 'the address of an author in this repository history');
+    addEmail(committerEmail, 'the address of a committer in this repository history');
+
+    // `1234567+handle@users.noreply.github.com` carries a GitHub username.
+    for (const email of [authorEmail, committerEmail]) {
+      const handle = /^\d+\+([A-Za-z0-9-]{4,})@users\.noreply\.github\.com$/i.exec(
+        email ?? '',
+      )?.[1];
+      if (handle) found.set(handle, 'a GitHub handle from this repository history');
+    }
+  }
+
+  return [...found].map(([value, what]) => ({ value, what }));
 }
 
 const findings = [];
-const identity = gitIdentity();
+const identity = gitIdentities();
 
 for (const file of trackedFiles()) {
   let text;
