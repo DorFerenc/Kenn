@@ -12,7 +12,12 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { checkMessages, generateCoverage, toMarkdown } from './gen-i18n-coverage.mjs';
+import {
+  checkMessages,
+  generateCoverage,
+  toMarkdown,
+  usedKeys,
+} from './gen-i18n-coverage.mjs';
 
 /** Write a throwaway messages directory and check it. */
 function check(catalogues) {
@@ -144,6 +149,107 @@ describe('a dropped placeholder', () => {
     // gate unusable.
     const { problems } = check({ he: { a: GENDERED }, en: { a: 'Mark as done' } });
     expect(problems).toEqual([]);
+  });
+});
+
+describe('a rich-text tag', () => {
+  it('catches a tag one locale dropped', () => {
+    // next-intl throws at render when a message carries a tag the call site
+    // did not supply a handler for, so this crashes the page that has it.
+    const { problems } = check({
+      he: { terms: 'טקסט' },
+      en: { terms: 'Read <link>the terms</link>' },
+    });
+    expect(problems).toEqual(['he.json: terms drops the <link> tag that en.json uses']);
+  });
+
+  it('sees a placeholder nested inside a tag', () => {
+    // The walk used to stop at the tag node, so this read as two identical
+    // messages — the exact case the placeholder check exists for.
+    const { problems } = check({
+      he: { read: 'קרא <link>כאן</link>' },
+      en: { read: 'Read <link>here on {date}</link>' },
+    });
+    expect(problems).toEqual([
+      'he.json: read drops the {date} placeholder that en.json uses',
+    ]);
+  });
+
+  it('accepts a tag both locales carry', () => {
+    const { problems } = check({
+      he: { read: 'קרא <link>כאן</link>' },
+      en: { read: 'Read <link>here</link>' },
+    });
+    expect(problems).toEqual([]);
+  });
+});
+
+describe('a select one locale dropped', () => {
+  it('is caught, because the call site will not supply the argument', () => {
+    const { problems } = check({
+      he: { a: 'אחד' },
+      en: { a: '{kind, select, test {T} other {O}}' },
+    });
+    expect(problems).toEqual(['he.json: a drops the {kind} select that en.json uses']);
+  });
+
+  it('still exempts genderForm, which genderValues() always supplies', () => {
+    const { problems } = check({ he: { a: GENDERED }, en: { a: 'Mark as done' } });
+    expect(problems).toEqual([]);
+  });
+});
+
+describe('a catalogue file that is not a locale', () => {
+  it('is refused rather than becoming a third language', () => {
+    const { problems } = check({ he: { a: 'א' }, en: { a: 'A' }, ar: { a: 'ا' } });
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain('ar.json is not one of the locales');
+  });
+});
+
+describe('a message of invisible characters', () => {
+  it('is empty to a reader, so it is empty to the gate', () => {
+    // A stray right-to-left mark left by a paste. `trim()` does not see it.
+    const { problems } = check({ he: { a: '\u200f\u2060' }, en: { a: 'A' } });
+    expect(problems).toEqual(['he.json: a is empty']);
+  });
+});
+
+describe('a duplicated key', () => {
+  it('is caught, although JSON.parse keeps only the last', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'kenn-i18n-dup-'));
+    writeFileSync(join(dir, 'he.json'), '{"a":"x","a":"y"}');
+    writeFileSync(join(dir, 'en.json'), '{"a":"A"}');
+    const { problems } = checkMessages(dir);
+    expect(problems).toEqual(['he.json: "a" appears twice in the same object']);
+  });
+
+  it('allows the same key in two different objects', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'kenn-i18n-nodup-'));
+    writeFileSync(join(dir, 'he.json'), '{"one":{"a":"x"},"two":{"a":"y"}}');
+    writeFileSync(join(dir, 'en.json'), '{"one":{"a":"A"},"two":{"a":"B"}}');
+    expect(checkMessages(dir).problems).toEqual([]);
+  });
+});
+
+describe('the keys the app actually asks for', () => {
+  it('finds every literal t() key in the real app, and they all exist', () => {
+    // The half of hard rule 4 the catalogues cannot check: next-intl renders
+    // the key path when a key is missing, so t('app.nmae') would ship the
+    // string "app.nmae" to a parent's screen with both catalogues in sync.
+    const { literal } = usedKeys();
+    expect(literal.length).toBeGreaterThan(0);
+
+    const known = new Set(checkMessages().keys);
+    const missing = literal.filter(({ key }) => !known.has(key));
+    expect(missing).toEqual([]);
+  });
+
+  it('records the prefix of a key built from a template literal', () => {
+    // These cannot be resolved statically, so they must never be reported as
+    // unused — the harness reaches four namespaces this way.
+    const { dynamicPrefixes } = usedKeys();
+    expect([...dynamicPrefixes].length).toBeGreaterThan(0);
   });
 });
 

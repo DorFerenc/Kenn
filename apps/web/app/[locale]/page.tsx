@@ -1,4 +1,4 @@
-import { formatIsoDate, genderForms, isLocale, locales } from '@kenn/ui';
+import { dirForLocale, formatIsoDate, genderForms, isLocale, locales } from '@kenn/ui';
 import { genderValues } from '@/i18n/gender.ts';
 import { Link } from '@/i18n/navigation.ts';
 import { notFound } from 'next/navigation';
@@ -52,6 +52,12 @@ export default async function HomePage({
               key={candidate}
               href="/"
               locale={candidate}
+              // Each language is labelled in its own name, and carries its own
+              // lang and dir: a reader who cannot read the current language is
+              // exactly the reader who needs this control, and a screen reader
+              // should pronounce each name with the right voice.
+              lang={candidate}
+              dir={dirForLocale(candidate)}
               aria-current={candidate === locale ? 'page' : undefined}
               className="border-border bg-surface-raised inline-flex min-h-(--size-tap) items-center rounded-md border px-2 aria-[current=page]:border-transparent aria-[current=page]:bg-accent aria-[current=page]:text-on-accent"
             >

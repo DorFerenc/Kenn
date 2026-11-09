@@ -3,17 +3,9 @@
     "name": "Kenn",
     "tagline": "The right thing, at the right time."
   },
-  "common": {
-    "loading": "Loading…",
-    "undo": "Undo",
-    "back": "Back",
-    "close": "Close",
-    "save": "Save",
-    "retry": "Try again"
-  },
   "locale": {
     "label": "Language",
-    "he": "Hebrew",
+    "he": "עברית",
     "en": "English"
   },
   "onboarding": {
@@ -26,8 +18,7 @@
     }
   },
   "tasks": {
-    "markDone": "Mark as done",
-    "done": "Done"
+    "markDone": "Mark as done"
   },
   "window": {
     "before": "Opens {date}",

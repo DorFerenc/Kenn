@@ -22,6 +22,13 @@
  */
 
 @theme {
+  /* Drop Tailwind's default palette entirely. Without this, `bg-red-500` and
+     `text-white` still compile — a hard-coded colour that no scan for `#rrggbb`
+     can see, with no dark-mode override and no row in the contrast table. The
+     tokens below are then the only colours that exist, which is a stronger
+     guarantee than any check. */
+  --color-*: initial;
+
   /* ---------------------------------------------------------------- type */
   /* Heebo: Roboto's Hebrew companion, nine weights, full Hebrew coverage.
      `--font-heebo` is set by next/font in the app layout; the quoted name and

@@ -184,6 +184,57 @@ const SCAN_ROOTS = ['apps/web', 'packages/ui'];
 const SCAN_EXTENSIONS = ['.ts', '.tsx', '.css'];
 const SKIP_DIRECTORIES = new Set(['node_modules', '.next', 'dist', 'coverage']);
 
+/**
+ * A colour that is not a token. The literal forms, and Tailwind's palette
+ * utilities — `--color-*: initial` in tokens.css means those no longer
+ * compile, so this turns a silently unstyled element into a named failure.
+ */
+const COLOUR_PATTERNS: Array<[RegExp, string]> = [
+  [/#[0-9a-fA-F]{3,8}\b/g, 'use a token from tokens.css instead of a colour literal'],
+  [
+    /\b(?:rgba?|hsla?|oklch|oklab|lab|lch|color-mix)\(/g,
+    'use a token from tokens.css instead of a colour function',
+  ],
+  [
+    /(?:color|background|border|fill|stroke)[\w-]*\s*:\s*(?:white|black|red|green|blue|gr[ae]y)\b/g,
+    'use a token from tokens.css instead of a named colour',
+  ],
+  [
+    /(?<![\w-])(?:bg|text|border|fill|stroke|ring|from|via|to)-(?:white|black|slate|gr[ae]y|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)(?:-\d{2,3})?(?![\w-])/g,
+    "use a token utility; Tailwind's default palette is switched off",
+  ],
+];
+
+/**
+ * A physical direction. Each is correct in English and wrong in Hebrew, which
+ * is the default language — see packages/ui/CLAUDE.md, "RTL is not a theme".
+ */
+const PHYSICAL_PATTERNS: Array<[RegExp, string]> = [
+  [/\b(?:margin|padding|border)-(?:left|right)\b/g, 'use -inline-start / -inline-end'],
+  [
+    // No trailing \b: borderRightWidth continues with an uppercase letter.
+    /\b(?:margin|padding|border|inset)(?:Left|Right)(?![a-z])/g,
+    'use the inline-start / inline-end form, even in a style object',
+  ],
+  [/(?<![\w-])(?:inset-)?(?:left|right)\s*:/g, 'use inset-inline-start / -end'],
+  [/\btext-align\s*:\s*(?:left|right)\b/g, 'use text-align: start / end'],
+  [/\b(?:float|clear)\s*:\s*(?:left|right)\b/g, 'use inline-start / inline-end'],
+  [/(?<![\w-])-?(?:ml|mr|pl|pr)-/g, 'use the ms-/me-/ps-/pe- utilities'],
+  [/(?<![\w-])(?:border|rounded)-(?:l|r)(?![a-z])/g, 'use the -s / -e utilities'],
+  [
+    /(?<![\w-])-?(?:left|right)-(?:\d|auto|full|px|\[)/g,
+    'use the start- / end- utilities',
+  ],
+  [/(?<![\w-])float-(?:left|right)(?![\w-])/g, 'use float-start / float-end'],
+  [/(?<![\w-])text-(?:left|right)(?![\w-])/g, 'use text-start / text-end'],
+];
+
+function offendersIn(body: string, patterns: Array<[RegExp, string]>): string[] {
+  return patterns.flatMap(([pattern, fix]) =>
+    [...body.matchAll(pattern)].map((m) => `${m[0].trim()} — ${fix}`),
+  );
+}
+
 function sourceFiles(dir: string): string[] {
   const out: string[] = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -203,43 +254,118 @@ const scanned = SCAN_ROOTS.flatMap(sourceFiles).map((file) => ({
   body: stripComments(readFileSync(file, 'utf8')),
 }));
 
+/**
+ * The patterns' own fixtures.
+ *
+ * Without these, both scans below end in `expect(offenders).toEqual([])` over a
+ * repository that currently contains no offender — so deleting every pattern
+ * would leave the suite green. A check that passes when it is deleted is
+ * decoration, and these are the cases that were slipping through before they
+ * were written down.
+ */
+describe('the colour scan', () => {
+  it.each([
+    'color: #a4451c',
+    'color: #a4451caa',
+    'color: #abc',
+    'background: rgb(255 0 0)',
+    'background: rgba(0,0,0,.5)',
+    'background: hsl(0 100% 50%)',
+    'color: oklch(0.7 0.1 40)',
+    'background: color-mix(in oklab, red, blue)',
+    'color: white',
+    'background-color: black',
+    'className="bg-red-500"',
+    'className="text-white"',
+    'className="border-slate-200"',
+    'className="ring-blue-400"',
+  ])('catches %s', (snippet) => {
+    expect(offendersIn(snippet, COLOUR_PATTERNS).length).toBeGreaterThan(0);
+  });
+
+  it.each([
+    'className="bg-accent text-on-accent"',
+    'className="bg-window-before"',
+    'className="text-text-muted"',
+    'const id = "#main-content"',
+    'background-color: var(--color-surface)',
+  ])('allows %s', (snippet) => {
+    expect(offendersIn(snippet, COLOUR_PATTERNS)).toEqual([]);
+  });
+});
+
+describe('the RTL scan', () => {
+  it.each([
+    'margin-left: 8px',
+    'padding-right: 1rem',
+    'border-left: 1px solid',
+    'left: 0',
+    'inset-left: 0',
+    'text-align: left',
+    'float: right',
+    'style={{ marginLeft: 8 }}',
+    'style={{ borderRightWidth: 2 }}',
+    'className="ml-2"',
+    'className="pr-4"',
+    // The negative form: `(?<!\w)` alone would let every -ml-/-mr- through.
+    'className="-mr-1"',
+    'className="-pl-2"',
+    // The suffixed forms, which a `(?![\w-])` guard meant for rounded-lg
+    // accidentally spared.
+    'className="border-l-2"',
+    'className="rounded-l-md"',
+    'className="absolute left-0"',
+    'className="right-4"',
+    'className="float-left"',
+    'className="text-right"',
+  ])('catches %s', (snippet) => {
+    expect(offendersIn(snippet, PHYSICAL_PATTERNS).length).toBeGreaterThan(0);
+  });
+
+  it.each([
+    'className="ms-2 me-4 ps-1 pe-3"',
+    'className="start-0 end-4"',
+    'className="text-start"',
+    'className="rounded-lg"',
+    'className="border-s-2 rounded-e-md"',
+    'margin-inline-start: 8px',
+    'inset-inline-end: 0',
+    // Words that merely contain a direction.
+    'const copyright = 1',
+    'className="overflow-x-auto"',
+    'aria-label="scroll"',
+  ])('allows %s', (snippet) => {
+    expect(offendersIn(snippet, PHYSICAL_PATTERNS)).toEqual([]);
+  });
+});
+
 describe('repository', () => {
   it('has files to scan', () => {
     expect(scanned.length).toBeGreaterThan(0);
+  });
+
+  it("switches off Tailwind's default palette", () => {
+    // Verified against a real build: with this line, `bg-red-500` and
+    // `text-white` do not compile at all, which no scan for `#rrggbb` could
+    // have caught.
+    expect(css).toMatch(/--color-\*:\s*initial;/);
   });
 
   it('hard-codes no colour outside the token file', () => {
     const offenders = scanned
       .filter(({ file }) => file !== TOKENS_FILE && !isTest(file))
       .flatMap(({ file, body }) =>
-        [...body.matchAll(/#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?\b/g)].map(
-          (m) => `${file}: ${m[0]}`,
-        ),
+        offendersIn(body, COLOUR_PATTERNS).map((o) => `${file}: ${o}`),
       );
 
-    expect(offenders, 'use a token from tokens.css instead of a colour literal').toEqual(
-      [],
-    );
+    expect(offenders).toEqual([]);
   });
 
   it('uses CSS logical properties, never physical ones', () => {
-    // RTL is not a theme (packages/ui/CLAUDE.md): a physical property is
-    // correct in English and wrong in Hebrew, which is the default language.
-    const physical: Array<[RegExp, string]> = [
-      [/\b(margin|padding|border)-(left|right)\b/g, 'use -inline-start / -inline-end'],
-      [/(?<![\w-])(?:inset-)?(?:left|right)\s*:/g, 'use inset-inline-start / -end'],
-      [/\btext-align\s*:\s*(left|right)\b/g, 'use text-align: start / end'],
-      [/(?<![\w-])(?:ml|mr|pl|pr)-/g, 'use the ms-/me-/ps-/pe- utilities'],
-      [/(?<![\w-])(?:border|rounded)-(?:l|r)(?![\w-])/g, 'use the -s / -e utilities'],
-      [/(?<![\w-])text-(?:left|right)(?![\w-])/g, 'use text-start / text-end'],
-    ];
-
     const offenders = scanned
       .filter(({ file }) => !isTest(file))
       .flatMap(({ file, body }) =>
-        physical.flatMap(([pattern, fix]) =>
-          [...body.matchAll(pattern)].map((m) => `${file}: ${m[0].trim()} — ${fix}`),
-        ),
+        offendersIn(body, PHYSICAL_PATTERNS).map((o) => `${file}: ${o}`),
       );
 
     expect(offenders).toEqual([]);

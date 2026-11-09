@@ -3,18 +3,10 @@
     "name": "קֵן",
     "tagline": "הדבר הנכון, בזמן הנכון."
   },
-  "common": {
-    "loading": "בטעינה…",
-    "undo": "{genderForm, select, feminine {בטלי} masculine {בטל} other {בטלו}}",
-    "back": "{genderForm, select, feminine {חזרי} masculine {חזור} other {חזרו}}",
-    "close": "{genderForm, select, feminine {סגרי} masculine {סגור} other {סגרו}}",
-    "save": "{genderForm, select, feminine {שמרי} masculine {שמור} other {שמרו}}",
-    "retry": "{genderForm, select, feminine {נסי שוב} masculine {נסה שוב} other {נסו שוב}}"
-  },
   "locale": {
     "label": "שפה",
     "he": "עברית",
-    "en": "אנגלית"
+    "en": "English"
   },
   "onboarding": {
     "genderForm": {
@@ -26,8 +18,7 @@
     }
   },
   "tasks": {
-    "markDone": "{genderForm, select, feminine {סמני כבוצע} masculine {סמן כבוצע} other {סמנו כבוצע}}",
-    "done": "בוצע"
+    "markDone": "{genderForm, select, feminine {סמני כבוצע} masculine {סמן כבוצע} other {סמנו כבוצע}}"
   },
   "window": {
     "before": "נפתח ב־{date}",

@@ -87,7 +87,12 @@ export default tseslint.config(
     },
   },
 
-  // Only the service layer talks to the database.
+  // Only the service layer talks to the database, and links keep their locale.
+  //
+  // `no-restricted-imports` replaces the base rule rather than extending it,
+  // so the cross-package `../../*` ban from the block above has to be repeated
+  // here or it stops applying to apps/web — which it silently did until
+  // apps/web had code.
   {
     files: ['apps/web/**/*.{ts,tsx}'],
     ignores: ['apps/web/lib/services/**'],
@@ -95,11 +100,23 @@ export default tseslint.config(
       'no-restricted-imports': [
         'error',
         {
+          patterns: [
+            {
+              group: ['../../*'],
+              message:
+                'Import across packages by workspace name (@kenn/engine), or by the @/ alias within apps/web.',
+            },
+          ],
           paths: [
             {
               name: '@supabase/supabase-js',
               message:
                 'Only apps/web/lib/services may talk to Postgres. Call a service function instead. See CLAUDE.md.',
+            },
+            {
+              name: 'next/link',
+              message:
+                'Use Link from @/i18n/navigation.ts, or a link drops the locale prefix. See apps/web/CLAUDE.md.',
             },
           ],
         },
