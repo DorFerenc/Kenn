@@ -11,6 +11,43 @@ log from step 0 onward.**
 
 ---
 
+## 2026-11-09 · step 0 follow-up
+
+Two items that step 0 left open are now closed. No code changed.
+
+### Decided
+
+- **`main` is the default branch.** CI's `push: branches: [main]` trigger and
+  future PR bases now point at the right place.
+- **The shopping-list CSV is usable.** The re-export is UTF-8 with BOM, 61 items
+  in 9 consistent columns, Hebrew intact (2,113 Hebrew characters, and the only
+  5 remaining `?` are the two header names `חובה?` and `נקנה?` plus three inside
+  URLs). **Step 8 is unblocked.**
+- **The file stays out of the repository.** It is household data, and
+  `docs/architecture.md` puts household data in Postgres behind RLS, not in git —
+  `seed.sql` is fake-household-only for exactly this reason, since it loads into
+  every preview environment. Its _structure_ is recorded in
+  [`plans/things-csv-import.md`](plans/things-csv-import.md) so step 8 can build
+  the importer without the data: the column contract, the value vocabularies, the
+  tracking parameters to strip and the one (`variant`) that must be kept, the
+  check that refuses a destroyed export, and the test fixtures to carry.
+
+### Open
+
+- **Two gaps in the `inventory_item` model**, found in the real list and needing a
+  decision before step 8: a **sourcing note** ("where to look" — 4 rows use the
+  link column for this, not for a URL), and a **required flag** separate from
+  `status`, because `חובה?` and `נקנה?` are independent axes and collapsing them
+  makes "optional, not bought" indistinguishable from "mandatory, not bought".
+- Everything else from the step 0 entry below, unchanged. The current week and
+  EDD, and the Supabase, Vercel and Anthropic accounts, still block step 1.
+
+### Next
+
+Unchanged: **step 1**. PR #1 is open, green and awaiting review.
+
+---
+
 ## 2026-11-07 · step 0 · bootstrap
 
 Learning file: [`learnings/2026-11-07-step-0-bootstrap.md`](learnings/2026-11-07-step-0-bootstrap.md)
@@ -76,11 +113,6 @@ Learning file: [`learnings/2026-11-07-step-0-bootstrap.md`](learnings/2026-11-07
   Next.js 16 fails the build on a custom webpack config. `@serwist/next@9.5.13`
   claims `next >=14` but that is untested here. **Risk on step 6**; fallback is a
   hand-written service worker for the offline emergency card.
-- **The shopping-list CSV is still unusable.** The uploaded file is ASCII with
-  2,148 literal `?` bytes and zero Hebrew characters — the characters were
-  destroyed at export, so no decoding recovers them. Only 8 of 62 rows retain any
-  Latin or numeric data. Needs a Google Sheets → Download → CSV, not an Excel
-  export. **Blocks step 8.**
 - **Yarden's role**: co-builder, or content and UX review?
 - Unchanged from before: store medical documents at all; whether to open it to
   other families; monthly budget ceiling; the name checks (trademark, stores,

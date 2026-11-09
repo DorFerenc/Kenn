@@ -28,9 +28,10 @@ flowchart LR
 - [ ] Install locally: Node 24 LTS, pnpm 12, Docker, the Supabase CLI and Claude Code
 - [x] Decide Next.js or SvelteKit — **Next.js** (ADR-0004)
 - [ ] Decide Yarden's role
-- [ ] Re-export the shopping list as **CSV UTF-8** — the current export lost every
-      Hebrew character to literal `?` bytes and cannot be recovered by decoding.
-      Download from Google Sheets as CSV rather than exporting from Excel.
+- [x] Re-export the shopping list as **CSV UTF-8** — done 2026-11-09. UTF-8 with
+      BOM, 61 items, 9 columns, Hebrew intact. The structure is recorded in
+      [`things-csv-import.md`](things-csv-import.md); the file itself is household
+      data and stays out of the repository.
 - [ ] Run the name checks (Israeli trademark registry, App Store, Google Play) and
       buy the domain
 
@@ -60,7 +61,11 @@ flowchart LR
 - [ ] **7.** Safety center v1: offline emergency card, red-flag cards, safe-sleep
       and shelter checklists, car automation guide.
 - [ ] **8.** Things: generic CSV import and export, budget, gift registry.
-      **Blocked on** a working CSV UTF-8 re-export of the shopping list.
+      No longer blocked — build the importer against
+      [`things-csv-import.md`](things-csv-import.md), which carries the column
+      contract, the tracking parameters to strip (and the one, `variant`, that
+      must be kept), the destroyed-export check, and two gaps it exposes in the
+      item model: a sourcing note, and a required flag separate from `status`.
 
 ### Gate A — both parents use it daily for two weeks
 

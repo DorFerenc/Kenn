@@ -283,9 +283,11 @@ The coach is a Claude API chat with your household state and the relevant KB sli
 
 ## Things (inventory)
 
-The shopping list CSV can't be imported as it is: every Hebrew character in it was saved as "?", so only the English model names, prices and links survived. Re-export it as **CSV UTF-8** from Excel, or download it from Google Sheets as CSV.
+The shopping list is importable as of 2026-11-09: **61 items in 9 columns**, UTF-8 with BOM, grouped by 8 categories, Hebrew intact. Its column contract, quirks and test fixtures are in [`plans/things-csv-import.md`](plans/things-csv-import.md); the file itself is household data and stays out of the repository.
 
-What survived: 62 rows in 9 columns, grouped by category. Only 4 rows have a price: the Cybex stroller at ₪3,800, the Chicco Fit 360 car seat at ₪2,200, and two more at ₪700 and ₪300. That's ₪7,000 priced, with 58 items still unpriced.
+Only 4 items have a price: the Cybex stroller at ₪3,800, the Chicco Fit 360 car seat at ₪2,200, the Chicco bath at ₪700 and a changing mat at ₪300. That's ₪7,000 priced, with 57 items still unpriced. 52 are marked mandatory, 9 optional; 57 are wanted before the birth, 4 after; 3 are already bought.
+
+The first export was unusable, and it is worth knowing why, because the importer should detect it: Excel's "Save as CSV" on a Hebrew locale replaced every Hebrew character with a literal `?` byte rather than mis-encoding it, so no decoding could recover the text. Download from Google Sheets as CSV instead.
 
 **Item model:**
 
