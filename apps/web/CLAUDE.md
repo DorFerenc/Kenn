@@ -1,7 +1,8 @@
 # apps/web — rules for Claude
 
 The Next.js 16 PWA: routes, server actions, the `/mcp` and `/ics` routes, and the
-service layer. Placeholder until roadmap step 1.
+service layer. The i18n skeleton landed at roadmap step 2; the first real screens
+(onboarding, Today) arrive at step 5.
 
 ## Boundaries
 
@@ -38,9 +39,22 @@ route and the MCP tool. Validate on the server even when the client already did.
 ## i18n and RTL
 
 - No hard-coded strings. ICU keys in `messages/he.json` and `messages/en.json`,
-  both of them, every time.
-- Hebrew addresses the reader by gender (`סמן` / `סמני`). Use ICU `select` on the
-  user's `gender_form`, with a neutral plural as the third branch.
+  both of them, every time. `pnpm docs:gen` fails on a key in one locale only, an
+  empty message, invalid ICU, or a placeholder one locale dropped.
+- Hebrew addresses the reader by gender (`סמן` / `סמני`). Use ICU `select` on
+  `genderForm` with `feminine`, `masculine` and `other` branches, where `other`
+  is the neutral plural that `member.gender_form = 'neutral'` resolves to. The
+  gate fails on a missing branch.
+- **next-intl 4 removed `defaultTranslationValues`,** so a gendered message needs
+  the value passed at the call. Use `genderValues()` from `i18n/gender.ts` rather
+  than writing the argument out, or one call site will be the one that forgets.
+- **A Server Component that is `async` cannot call `useTranslations`** — and
+  every page is async now that `params` is a promise. Use `getTranslations`.
+- **`NextIntlClientProvider` is not optional.** next-intl's own `<Link>` is a
+  Client Component that reads the locale from context, so leaving the provider
+  out builds cleanly and then fails at render with "No intl context found".
+- Link with `Link` from `i18n/navigation.ts`, never `next/link`, or the locale
+  prefix is dropped.
 - **CSS logical properties only**: `margin-inline-start`, never `margin-left`.
 - Numbers, phone numbers and timers stay LTR inside RTL text.
 - Dates: `14/03/2027` for `he`, `March 14, 2027` for `en`.
@@ -52,13 +66,21 @@ default at night. One primary action per item.
 
 ## Placeholder dependencies
 
-`knip.json` lists dependencies that `apps/web` declares but does not import yet
-(`next-intl`, `serwist`, `tailwindcss`, `zod`, `@supabase/supabase-js`, the
-workspace packages). They are declared so the lockfile records the version matrix
-from the first commit. **Remove each from `ignoreDependencies` as the step that
-uses it lands** — step 2 for `next-intl` and Tailwind, step 1 for
-`@supabase/supabase-js`, step 6 for Serwist. An entry still there at Gate A means
-a dependency nothing uses.
+`knip.json` lists dependencies that `apps/web` declares but does not import yet:
+`zod`, `@supabase/supabase-js`, `serwist`, `@serwist/next`, `@kenn/db`,
+`@kenn/engine` and `@kenn/kb`. They are declared so the lockfile records the
+version matrix from the first commit. **Remove each from `ignoreDependencies` as
+the step that uses it lands** — step 5 for Supabase, zod and the workspace
+packages, step 6 for Serwist. An entry still there at Gate A means a dependency
+nothing uses.
 
-`src/placeholder.ts` holds the two locales and nothing else. Delete it once
-`app/[locale]` has real routes.
+Step 2 took `next-intl`, `tailwindcss`, `@tailwindcss/postcss` and `@kenn/ui`
+off that list. Deleting an entry is the point; adding one back is a promise to
+return that nobody keeps. Run `/prune` rather than widening the ignore list.
+
+## Next.js writes files
+
+`next dev` generates `next-env.d.ts` (git-ignored; typecheck does not need it)
+and would write an `AGENTS.md` into this directory on every run. `agentRules` is
+off in `next.config.ts`: Kenn's AI instructions are `CLAUDE.md` and `.claude/`,
+reviewed and committed deliberately, not a file a tool rewrites behind the gate.
