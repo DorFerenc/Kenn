@@ -3,13 +3,13 @@
 Versioned and reviewed like code. Nothing here changes except through a PR the
 user approves; see the `retro` and `consolidate` skills.
 
-| Path                  | What it is                                                                                                                       |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `settings.json`       | Hooks and permission guardrails. Committed.                                                                                      |
-| `settings.local.json` | Personal overrides. Git-ignored, never committed.                                                                                |
-| `agents/`             | `planner`, `reviewer`, `security-reviewer`, `doc-keeper`, `kb-curator`                                                           |
-| `skills/`             | `/plan-feature`, `/implement-step`, `/review-code`, `/write-migration`, `/add-kb-item`, `/update-docs`, `/retro`, `/consolidate` |
-| `hooks/`              | Shell hooks invoked by `settings.json`                                                                                           |
+| Path                  | What it is                                                                                                                                 |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `settings.json`       | Hooks and permission guardrails. Committed.                                                                                                |
+| `settings.local.json` | Personal overrides. Git-ignored, never committed.                                                                                          |
+| `agents/`             | `planner`, `reviewer`, `security-reviewer`, `doc-keeper`, `kb-curator`                                                                     |
+| `skills/`             | `/plan-feature`, `/implement-step`, `/review-code`, `/prune`, `/write-migration`, `/add-kb-item`, `/update-docs`, `/retro`, `/consolidate` |
+| `hooks/`              | Shell hooks invoked by `settings.json`                                                                                                     |
 
 ## Hooks
 
