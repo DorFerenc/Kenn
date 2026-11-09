@@ -1,1 +1,48 @@
-{}
+{
+  "app": {
+    "name": "קֵן",
+    "tagline": "הדבר הנכון, בזמן הנכון."
+  },
+  "common": {
+    "loading": "בטעינה…",
+    "undo": "{genderForm, select, feminine {בטלי} masculine {בטל} other {בטלו}}",
+    "back": "{genderForm, select, feminine {חזרי} masculine {חזור} other {חזרו}}",
+    "close": "{genderForm, select, feminine {סגרי} masculine {סגור} other {סגרו}}",
+    "save": "{genderForm, select, feminine {שמרי} masculine {שמור} other {שמרו}}",
+    "retry": "{genderForm, select, feminine {נסי שוב} masculine {נסה שוב} other {נסו שוב}}"
+  },
+  "locale": {
+    "label": "שפה",
+    "he": "עברית",
+    "en": "אנגלית"
+  },
+  "onboarding": {
+    "genderForm": {
+      "question": "איך נפנה אליכם?",
+      "help": "אפשר לשנות בכל שלב בהגדרות.",
+      "feminine": "בלשון נקבה",
+      "masculine": "בלשון זכר",
+      "neutral": "בלשון רבים"
+    }
+  },
+  "tasks": {
+    "markDone": "{genderForm, select, feminine {סמני כבוצע} masculine {סמן כבוצע} other {סמנו כבוצע}}",
+    "done": "בוצע"
+  },
+  "window": {
+    "before": "נפתח ב־{date}",
+    "inside": "פתוח עד {date}",
+    "after": "נסגר ב־{date}"
+  },
+  "evidence": {
+    "strong": "ראיות חזקות",
+    "moderate": "ראיות בינוניות",
+    "weak": "ראיות חלשות",
+    "custom": "הגדרה שלכם"
+  },
+  "errors": {
+    "notFoundTitle": "הדף לא נמצא",
+    "notFoundBody": "הקישור כנראה שונה או שפג תוקפו.",
+    "backHome": "{genderForm, select, feminine {חזרי לדף הבית} masculine {חזור לדף הבית} other {חזרו לדף הבית}}"
+  }
+}

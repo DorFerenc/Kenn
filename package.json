@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Kenn (\u05e7\u05b5\u05df) \u2014 Hebrew + English PWA that plans pregnancy, birth and the first year for Israeli families.",
+  "description": "Kenn (קֵן) — Hebrew + English PWA that plans pregnancy, birth and the first year for Israeli families.",
   "packageManager": "pnpm@12.18.0",
   "engines": {
     "node": ">=24.0.0"
@@ -36,6 +36,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@formatjs/icu-messageformat-parser": "3.5.22",
     "eslint": "10.14.0",
     "eslint-config-prettier": "10.1.8",
     "globals": "17.14.0",

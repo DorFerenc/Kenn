@@ -1,1 +1,48 @@
-{}
+{
+  "app": {
+    "name": "Kenn",
+    "tagline": "The right thing, at the right time."
+  },
+  "common": {
+    "loading": "Loading…",
+    "undo": "Undo",
+    "back": "Back",
+    "close": "Close",
+    "save": "Save",
+    "retry": "Try again"
+  },
+  "locale": {
+    "label": "Language",
+    "he": "Hebrew",
+    "en": "English"
+  },
+  "onboarding": {
+    "genderForm": {
+      "question": "How should we address you?",
+      "help": "You can change this at any time in settings.",
+      "feminine": "Feminine",
+      "masculine": "Masculine",
+      "neutral": "Plural (neutral)"
+    }
+  },
+  "tasks": {
+    "markDone": "Mark as done",
+    "done": "Done"
+  },
+  "window": {
+    "before": "Opens {date}",
+    "inside": "Open until {date}",
+    "after": "Closed {date}"
+  },
+  "evidence": {
+    "strong": "Strong evidence",
+    "moderate": "Moderate evidence",
+    "weak": "Weak evidence",
+    "custom": "Your own"
+  },
+  "errors": {
+    "notFoundTitle": "Page not found",
+    "notFoundBody": "The link has probably changed or expired.",
+    "backHome": "Back to the home page"
+  }
+}

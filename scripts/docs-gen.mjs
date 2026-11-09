@@ -2,15 +2,15 @@
 /**
  * pnpm docs:gen — regenerate and verify the docs that must not drift from code.
  *
- * Today it does one real job and reports four it cannot do yet:
+ * Today it does four real jobs and reports the one it cannot do yet:
  *
  *   1. Diagram sync (working now). Every docs/diagrams/*.mmd must match, byte for
  *      byte, the ```mermaid block it was extracted from. The .mmd file is the
  *      source; the block in the document is what a reader sees on GitHub. Keeping
  *      both means they can disagree, so this checks they do not.
  *   2. ER diagram from the migrations           — roadmap step 1
- *   3. i18n coverage from apps/web/messages     — roadmap step 2
- *   4. KB catalog from packages/kb/content      — roadmap step 3
+ *   3. KB catalog from packages/kb/content      — roadmap step 3
+ *   4. i18n coverage from apps/web/messages     — roadmap step 2
  *   5. MCP tool list from the tool registry     — roadmap step 9
  *
  * Exits non-zero when a diagram has drifted. See docs/architecture.md, section
@@ -21,6 +21,7 @@ import { readFileSync, readdirSync, existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { generateEr } from './gen-er.mjs';
 import { generateCatalog } from './gen-kb-catalog.mjs';
+import { generateCoverage } from './gen-i18n-coverage.mjs';
 
 const DIAGRAM_DIR = 'docs/diagrams';
 const MANIFEST = join(DIAGRAM_DIR, 'manifest.json');
@@ -36,6 +37,31 @@ function writeKbCatalog() {
   if (changed) writeFileSync(target, markdown);
   console.log(
     `KB catalogue: ${count} item(s)` +
+      (changed ? ' — regenerated.' : ' — already current.'),
+  );
+}
+
+// ------------------------------------------------------- i18n coverage
+function writeI18nCoverage() {
+  const { markdown, problems, keyCount, localeCount } = generateCoverage();
+  if (localeCount === 0) {
+    console.log('i18n coverage: no message catalogues yet, nothing to generate.');
+    return;
+  }
+
+  const target = 'docs/i18n-coverage.md';
+  const before = existsSync(target) ? readFileSync(target, 'utf8') : '';
+  const changed = before !== markdown;
+  if (changed) writeFileSync(target, markdown);
+
+  for (const problem of problems) {
+    console.error(`  i18n: ${problem}`);
+    failures += 1;
+  }
+
+  console.log(
+    `i18n coverage: ${keyCount} key(s) in ${localeCount} locale(s)` +
+      (problems.length > 0 ? ` — ${problems.length} problem(s).` : '') +
       (changed ? ' — regenerated.' : ' — already current.'),
   );
 }
@@ -156,16 +182,6 @@ function filesMatching(dir, predicate) {
 
 const pendingGenerators = [
   {
-    name: 'i18n coverage',
-    from: 'apps/web/messages',
-    step: 2,
-    // An empty `{}` message catalogue is not content.
-    hasContent: (d) =>
-      filesMatching(d, (f) => f.endsWith('.json')).some(
-        (f) => Object.keys(JSON.parse(readFileSync(f, 'utf8'))).length > 0,
-      ),
-  },
-  {
     name: 'MCP tool list',
     from: 'apps/web/app/api/mcp',
     step: 9,
@@ -189,6 +205,7 @@ function reportPending() {
 
 writeErDiagram();
 writeKbCatalog();
+writeI18nCoverage();
 checkDiagrams();
 console.log('generators awaiting their roadmap step:');
 reportPending();
