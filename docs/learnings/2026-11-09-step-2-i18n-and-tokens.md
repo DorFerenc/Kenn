@@ -102,6 +102,51 @@ exactly the ones nobody reads — which is why nobody notices.
   `defaultTranslationValues`, so the alternative was the same argument at every
   call site and one site eventually forgetting it.
 
+## The review found more than the build did
+
+Two agents ran over the diff. Between them they found a dead page and four
+gates that would have passed if deleted, and almost everything they found was
+the same two mistakes wearing different clothes.
+
+**A gate with no positive fixture is decoration.** The colour scan and the RTL
+scan both ended in `expect(offenders).toEqual([])` over a repository that
+contained no offender, so deleting every pattern would have left the suite
+green. I had verified them by planting violations **by hand** and watching them
+fail — which is exactly the verification that does not survive the session it
+happened in. Writing the planted case into the test is the whole difference,
+and I had already done it correctly for the i18n generator in the same hour.
+
+**A gate is blind to shapes, not only to values.** Asking "what does this
+reject?" found nothing; asking "what can it not see?" found all of it:
+
+- The colour scan looked for `#rrggbb`, while `@theme` leaves Tailwind's whole
+  palette live — so `bg-red-500` compiled, with no dark override and no
+  contrast row. The real fix was not a better regex but `--color-*: initial`,
+  which deletes those utilities outright. **Removing the possibility beats
+  detecting the mistake.**
+- The RTL scan missed every negative margin, every suffixed `border-l-2` and
+  `rounded-l-md`, the positioning utilities, and `marginLeft:` in a style
+  object.
+- The ICU walk handled six node types and fell through the seventh, so a
+  placeholder inside `<link>…</link>` was invisible — in the very check whose
+  comment says it exists to catch a dropped placeholder.
+- The same walk excluded every `select` argument from the cross-locale
+  comparison, when only `genderForm` was meant to be exempt.
+
+**And the page that rendered in no situation at all.** `not-found.tsx` was
+unreachable, so every 404 was Next's English default with no `dir`. Three
+translated strings — counted as covered in the generated coverage document —
+had never been on a screen. `knip` cannot see a framework entry file and
+`typecheck` does not render, so nothing noticed. The lesson is narrow and
+sharp: **a framework entry file that no request exercises should be assumed
+not to render.**
+
+Worth recording as a dead end: Next.js documents `global-not-found.tsx` for
+exactly this app's shape, I wrote it, and then deleted it — `[locale]` matches
+the first segment of every URL, so there are no unmatched routes and the file
+could never have run. Shipping it would have been the same sin the review had
+just found.
+
 ## What I got wrong
 
 - **I committed the `.claude/` changes inside a `docs:` commit** by reaching for
@@ -121,6 +166,13 @@ exactly the ones nobody reads — which is why nobody notices.
   was right and the shortcut was wrong: the escape hatch exists for a deliberate
   work-in-progress commit, not for impatience, and using it for speed is exactly
   how the red commit it was built to prevent gets in. Amended.
+- **I mixed AI instructions into a code commit twice**, both times because a
+  broad `git add` had staged more than the commit was about — the second time
+  from a staging command run several steps earlier, which is the version that is
+  hard to notice. Both were split before pushing. Second occurrence, so by the
+  promotion rules it earns a tool.
+- **I verified the token guards by hand and did not write the planting down.**
+  See above. The verification was real and it died with the terminal session.
 
 ## Rule candidates
 

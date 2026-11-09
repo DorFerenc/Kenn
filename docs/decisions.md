@@ -11,6 +11,125 @@ log from step 0 onward.**
 
 ---
 
+## 2026-11-09 · step 2 · i18n, design tokens, and a privacy guard that was asleep
+
+Step 2 done, and three things asked alongside it: fewer and truer documents, a
+simpler way in, and proof that nothing private is in the repository. Learning
+file:
+[`learnings/2026-11-09-step-2-i18n-and-tokens.md`](learnings/2026-11-09-step-2-i18n-and-tokens.md).
+
+88 tests → 307. `pnpm check:twice` stable across 162 files. `apps/web` renders.
+
+### Decided
+
+- **`packages/ui/src/tokens.css` is the single source of truth** for colour,
+  spacing, type and radius, in hex rather than oklch, with WCAG contrast
+  asserted as a table of pairs in both themes.
+  [ADR-0007](adr/0007-design-tokens-in-css-hex-with-contrast-as-a-test.md). The
+  reason for hex is the gate: a WCAG ratio is defined on sRGB, so a hex literal
+  keeps `contrast.ts` at thirty auditable lines. **A gate simpler than the thing
+  it guards is a gate you trust when it fails.**
+- **Tailwind's default palette is switched off** (`--color-*: initial`). Without
+  it `bg-red-500` compiled — a hard-coded colour with no dark override and no
+  contrast row, by the likeliest route in this codebase. Removing the
+  possibility beats detecting the mistake.
+- **The 8-pt grid is arithmetic**: one `--spacing: 0.5rem` that Tailwind
+  multiplies, so every spacing utility is an 8-pt multiple by construction.
+- **Hebrew, English, and the gender forms work end to end.** `/he` and `/en`
+  prerender with `lang` and `dir` from the locale; `genderValues()` is the one
+  place that supplies the ICU argument, because next-intl 4 removed
+  `defaultTranslationValues` and the alternative is every call site and one that
+  forgets.
+- **`resolveLocale()` narrows a locale the database allows and the UI does not
+  translate.** `member.locale` admits `ar` and `ru`; a member who chose Arabic
+  gets Hebrew, not an empty screen.
+- **The i18n coverage generator is a real gate.** It fails on a key in one
+  locale only, an empty or invisible-character message, invalid ICU, a missing
+  gender branch, a placeholder or rich-text tag one locale dropped, a select one
+  locale dropped, a duplicate JSON key, a catalogue file that is not a known
+  locale, and **a `t()` call naming a key no catalogue defines** — the half of
+  hard rule 4 that only bites at render time.
+- **`pnpm check` now builds the app.** It did not, which is how a 404 page that
+  rendered in no situation at all shipped behind a green gate.
+- **The privacy guard was green because it was looking for no one.** It read the
+  git identity, which in a cloud session is a bot it correctly ignores — and in
+  CI the checkout had one commit authored by GitHub's merge bot. It now reads
+  `git log`, CI checks out with `fetch-depth: 0`, it **fails rather than passes**
+  when it finds no identities, and it has 41 tests that never touch git. It also
+  masks a flagged address instead of reprinting it into a public CI log, and
+  knows Anthropic keys, fine-grained GitHub tokens, Postgres URLs, grouped
+  IBANs and +972 numbers. **The repository itself is clean**: no names, handles,
+  addresses, phone numbers, paths or key material in 158 tracked files.
+- **Documentation lost its second copies.** `docs/plan.md` (471 → 381 lines) had
+  a second roadmap, an "Open decisions" list still asking a question ADR-0004
+  settled, a decision log contradicted by a later entry, and a second stack
+  table offering SvelteKit. `docs/architecture.md` listed the hooks a second
+  time, wrongly. The README gained a five-command quickstart with a
+  troubleshooting table, an architecture paragraph, and "What to read" in order.
+- **`/prune` is a new skill**: challenge a change for code nothing uses and for
+  duplication worth collapsing, with an explicit section on when **not** to
+  merge two things that merely resemble each other.
+- **Review findings are all fixed, none accepted.** Four gates would have passed
+  if deleted; the 404 page rendered nowhere. Both categories are promoted into
+  `/review-code` as checklist lines.
+
+### Open
+
+**For you, unchanged and now blocking everything:**
+
+- **Supabase (Frankfurt), Vercel and the Anthropic Console with a spend cap.**
+  Step 2 was the last Release 1 step that needed nothing external. **Steps 1's
+  hosted half, 5 and 6 cannot start without these.**
+- **The current week and the ultrasound-corrected EDD.** These date every window.
+- **`./scripts/setup-branch-protection.sh`, from your own machine.** `main` is
+  still unprotected; a cloud session cannot reach the GitHub administration API.
+- **Three gov hosts on the network allowlist** for steps 7 and 8b:
+  `me.health.gov.il`, `btl.gov.il`, `kolzchut.org.il`.
+- **Review the Hebrew.** Every string is in `apps/web/messages/he.json` — 24
+  keys. The gendered imperatives especially (`סמני` / `סמן` / `סמנו`) and the
+  address-form question, which is phrased in the plural to avoid gendering the
+  question that asks about gender.
+- **Repository settings a script cannot reach**, now with a reason: **secret
+  scanning with push protection**, because `check:private` scans the working
+  tree and not history — a key committed and deleted leaves it green while the
+  blob stays reachable. Also Dependabot alerts and auto-delete head branches.
+
+**Carried into step 5:**
+
+- `requestLocale` is deprecated in favour of `next/root-params`, which generates
+  its types during a build and would fail `pnpm typecheck` on a fresh clone.
+  Staying on the deprecated-but-typed API; revisit when the types ship.
+- A 404 renders its content through Next's own error document, because the root
+  layout is a dynamic segment. The language and direction are correct and the
+  status is 404; the document shell is not ours. `global-not-found.tsx` is
+  Next's documented answer and does not apply here, since `[locale]` matches
+  every first segment.
+- No `Content-Security-Policy` yet. The other headers are set, including
+  `Referrer-Policy`, which matters because a share page linking to a government
+  source would otherwise send the share token in the `Referer`. A CSP written
+  against a page with no real content would be wrong by step 5.
+- No `eslint-plugin-jsx-a11y` or `react-hooks`: `eslint-config-next` is
+  deferred to step 5 by ADR-0004, and step 2 has just landed the first JSX.
+- An authenticated route must force itself dynamic — recorded in
+  `apps/web/CLAUDE.md`. A household route inheriting a prerenderable shell would
+  bake one family's health data into a build artefact.
+- Playwright, and with it a render test. `pnpm e2e` is still a stub.
+
+**Rule changes proposed, for you to accept or reject** (two `chore(ai):`
+commits): the package rules step 2 established, and the static-prerendering
+rule. The learning file proposes three more, including a pre-commit check that
+refuses a commit mixing AI instructions with code — I did that twice this
+session.
+
+### Next
+
+**Step 5** — onboarding wizard, Today and Checklist, realtime sync, production
+deploy, PWA on both phones. It is the next unticked step and it **cannot start
+until the Supabase and Vercel accounts exist**. Nothing else in Release 1 is
+unblocked.
+
+---
+
 ## 2026-11-09 · fixes, privacy and the README
 
 Everything the steps 1/3/4 retro recorded as wrong is now fixed, and each fix is
