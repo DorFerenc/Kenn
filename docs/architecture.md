@@ -430,128 +430,47 @@ In code these are plain types plus functions, not classes with hidden state. `Pr
 
 ## Database
 
-Every household table carries `household_id` and the same RLS policy; KB tables are global and read-only to users. This hand-drawn version shows the core tables; from step 1 it is replaced by one generated from the migrations (see Docs that stay current), so it can't drift from the schema.
+Every household table carries `household_id` and the same RLS policy; KB tables are global and read-only to users. The diagram below is **generated from the migrations** by `pnpm docs:gen`, so it cannot drift from the schema. Do not edit it by hand. It parses the migrations rather than querying a database, because CI has no database and the migrations are what gets reviewed.
 
+<!-- generated: er. Do not edit by hand; run `pnpm docs:gen`. -->
 ```mermaid
 erDiagram
   HOUSEHOLD ||--|{ MEMBER : has
-  HOUSEHOLD ||--o| PREGNANCY : tracks
-  HOUSEHOLD ||--o{ CHILD : has
-  HOUSEHOLD ||--o{ TASK_INSTANCE : owns
-  HOUSEHOLD ||--o{ INVENTORY_ITEM : owns
-  HOUSEHOLD ||--o{ SHARE_GRANT : issues
-  HOUSEHOLD ||--o{ MCP_CLIENT : authorizes
-  HOUSEHOLD ||--o{ AUDIT_LOG : records
-  HOUSEHOLD ||--o{ COACH_SESSION : holds
-  CHILD ||--o{ MEASUREMENT : has
-  CHILD ||--o{ MEDICINE_LOG : has
-  CHILD ||--o{ ALLERGEN_LOG : has
-  CHILD ||--o{ MILESTONE_OBS : has
-  KB_ITEM ||--o{ TASK_INSTANCE : instantiates
-  INVENTORY_ITEM ||--o{ RECALL_MATCH : flagged_by
-  COACH_SESSION ||--o{ COACH_MESSAGE : contains
-  HOUSEHOLD ||--o{ INVITE : sends
-  MEMBER ||--o{ PUSH_SUBSCRIPTION : registers
-
+  AUTH_USERS ||--|{ MEMBER : has
+  HOUSEHOLD ||--|{ INVITE : has
+  AUTH_USERS ||--|{ INVITE : has
   HOUSEHOLD {
     uuid id PK
     text name
     text country
     text default_locale
+    timestamptz created_at
+  }
+  INVITE {
+    uuid id PK
+    uuid household_id FK
+    text email
+    text token_hash
+    text role
+    uuid invited_by FK
+    timestamptz expires_at
+    timestamptz accepted_at
+    timestamptz revoked_at
+    timestamptz created_at
   }
   MEMBER {
-    uuid household_id FK
-    uuid user_id FK
+    uuid household_id PK,FK
+    uuid user_id PK,FK
     text role
     text locale
     text gender_form
+    timestamptz created_at
   }
-  PREGNANCY {
+  AUTH_USERS {
     uuid id PK
-    uuid household_id FK
-    date lmp
-    date edd
-    text dating_method
-    int fetuses
-  }
-  CHILD {
-    uuid id PK
-    uuid household_id FK
-    date birth_date
-    int ga_at_birth_weeks
-    text birth_type
-    bool firstborn
-  }
-  KB_ITEM {
-    text id PK
-    int version PK
-    text phase
-    text category
-    jsonb window
-    jsonb applies_if
-    jsonb locales
-    text_array sources
-    date review_by
-  }
-  TASK_INSTANCE {
-    uuid id PK
-    uuid household_id FK
-    text kb_item_id FK
-    int kb_version FK
-    date due_start
-    date due_end
-    text status
-    uuid done_by FK
-    timestamptz done_at
-    text note
-  }
-  INVENTORY_ITEM {
-    uuid id PK
-    uuid household_id FK
-    text category
-    text name
-    int qty
-    text model
-    int price_ils
-    text status
-    text needed_by
-    text claimed_by
-  }
-  SHARE_GRANT {
-    uuid id PK
-    uuid household_id FK
-    text token_hash
-    text_array scopes
-    timestamptz expires_at
-    timestamptz revoked_at
-  }
-  MCP_CLIENT {
-    uuid id PK
-    uuid household_id FK
-    text client_name
-    text_array scopes
-    timestamptz last_used_at
-    timestamptz revoked_at
-  }
-  AUDIT_LOG {
-    bigint id PK
-    uuid household_id FK
-    text actor_type
-    uuid actor_id
-    text action
-    jsonb before
-    jsonb after
-    timestamptz at
-  }
-  MEDICINE_LOG {
-    uuid id PK
-    uuid child_id FK
-    text medicine
-    text dose_from_label
-    timestamptz given_at
-    uuid given_by FK
   }
 ```
+<!-- /generated: er -->
 
 **The one RLS pattern, used on every household table:**
 
@@ -699,13 +618,13 @@ session reaches GitHub through a proxy that permits content reads and writes but
 refuses the administration API, so a ruleset cannot be created from inside one
 however the token is scoped. The script detects that and says so.
 
-| Rule                     | Effect                                                                                                                                 |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `pull_request`           | No direct pushes to `main`. **Zero required approvals for now**, so whoever opens a PR can merge it once CI is green.                  |
-| `required_status_checks` | Both CI jobs must pass: `Typecheck, lint and test` and `Gov watcher (Python)`. `strict` is on, so a PR must be up to date with `main`. |
-| `non_fast_forward`       | No force pushes. History on `main` is append-only.                                                                                     |
-| `deletion`               | `main` cannot be deleted.                                                                                                              |
-| Thread resolution        | Review conversations must be resolved before merge.                                                                                    |
+| Rule                     | Effect                                                                                                                                                                                                                |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pull_request`           | No direct pushes to `main`. **Zero required approvals for now**, so whoever opens a PR can merge it once CI is green.                                                                                                 |
+| `required_status_checks` | All three CI jobs must pass: `Typecheck, lint and test`, `Migrations and RLS` (migrations apply, pgTAP green, `types.ts` current) and `Gov watcher (Python)`. `strict` is on, so a PR must be up to date with `main`. |
+| `non_fast_forward`       | No force pushes. History on `main` is append-only.                                                                                                                                                                    |
+| `deletion`               | `main` cannot be deleted.                                                                                                                                                                                             |
+| Thread resolution        | Review conversations must be resolved before merge.                                                                                                                                                                   |
 
 Zero approvals is deliberate and temporary: it keeps `main` safe from an
 accidental push or a red build while a single builder still works alone. **When
