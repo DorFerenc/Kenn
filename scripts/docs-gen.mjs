@@ -20,11 +20,25 @@
 import { readFileSync, readdirSync, existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { generateEr } from './gen-er.mjs';
+import { generateCatalog } from './gen-kb-catalog.mjs';
 
 const DIAGRAM_DIR = 'docs/diagrams';
 const MANIFEST = join(DIAGRAM_DIR, 'manifest.json');
 
 let failures = 0;
+
+// ------------------------------------------------------- KB catalogue
+function writeKbCatalog() {
+  const { markdown, count } = generateCatalog();
+  const target = 'docs/kb-catalog.md';
+  const before = existsSync(target) ? readFileSync(target, 'utf8') : '';
+  const changed = before !== markdown;
+  if (changed) writeFileSync(target, markdown);
+  console.log(
+    `KB catalogue: ${count} item(s)` +
+      (changed ? ' — regenerated.' : ' — already current.'),
+  );
+}
 
 // ------------------------------------------------------------- ER generation
 function writeErDiagram() {
@@ -57,7 +71,7 @@ function writeErDiagram() {
     failures += 1;
     return;
   }
-  const replacement = `${open}\n\`\`\`mermaid\n${mermaid}\`\`\`\n${close}`;
+  const replacement = `${open}\n\n\`\`\`mermaid\n${mermaid}\`\`\`\n\n${close}`;
   const updated = text.slice(0, i) + replacement + text.slice(j + close.length);
   if (updated !== text) writeFileSync(doc, updated);
 
@@ -152,13 +166,6 @@ const pendingGenerators = [
       ),
   },
   {
-    name: 'KB catalog',
-    from: 'packages/kb/content',
-    step: 3,
-    hasContent: (d) =>
-      filesMatching(d, (f) => f.endsWith('.yaml') || f.endsWith('.yml')).length > 0,
-  },
-  {
     name: 'MCP tool list',
     from: 'apps/web/app/api/mcp',
     step: 9,
@@ -181,6 +188,7 @@ function reportPending() {
 }
 
 writeErDiagram();
+writeKbCatalog();
 checkDiagrams();
 console.log('generators awaiting their roadmap step:');
 reportPending();

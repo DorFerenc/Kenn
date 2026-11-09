@@ -433,6 +433,7 @@ In code these are plain types plus functions, not classes with hidden state. `Pr
 Every household table carries `household_id` and the same RLS policy; KB tables are global and read-only to users. The diagram below is **generated from the migrations** by `pnpm docs:gen`, so it cannot drift from the schema. Do not edit it by hand. It parses the migrations rather than querying a database, because CI has no database and the migrations are what gets reviewed.
 
 <!-- generated: er. Do not edit by hand; run `pnpm docs:gen`. -->
+
 ```mermaid
 erDiagram
   HOUSEHOLD ||--|{ MEMBER : has
@@ -470,6 +471,7 @@ erDiagram
     uuid id PK
   }
 ```
+
 <!-- /generated: er -->
 
 **The one RLS pattern, used on every household table:**

@@ -178,6 +178,9 @@ importers:
       globals:
         specifier: 17.14.0
         version: 17.14.0
+      js-yaml:
+        specifier: 5.5.0
+        version: 5.5.0
       knip:
         specifier: 6.44.1
         version: 6.44.1

@@ -1,0 +1,148 @@
+# Pregnancy visits, monitoring and admin, Israel.
+
+items:
+  - id: preg.open-pregnancy-file
+    kind: schedule
+    version: 1
+    country: IL
+    phase: pregnancy
+    category: visit
+    locales:
+      he:
+        title: פתיחת כרטיס הריון
+        why: משקל, לחץ דם, היסטוריה רפואית. מכאן מתחיל מעקב ההריון.
+      en:
+        title: Open your pregnancy file
+        why: Weight, blood pressure, medical history. Pregnancy monitoring starts here.
+    window: { anchor: LMP, start_days: 42, end_days: 76 }
+    coverage: basket
+    priority: critical
+    sources:
+      - https://www.machonorly.com/%D7%9C%D7%95%D7%97-%D7%96%D7%9E%D7%A0%D7%99%D7%9D-%D7%9C%D7%9E%D7%A2%D7%A7%D7%91-%D7%94%D7%A8%D7%99%D7%95%D7%9F-%D7%95%D7%94%D7%A0%D7%97%D7%99%D7%95%D7%AA-%D7%9B%D7%9C%D7%9C%D7%99%D7%95%D7%AA.html
+    review_by: "2027-03-01"
+
+  - id: preg.anti-d
+    kind: schedule
+    version: 1
+    country: IL
+    phase: pregnancy
+    category: test
+    locales:
+      he:
+        title: נוגדנים ו-אנטי-D לנשים עם Rh שלילי
+        why: ניתן שוב לאחר הלידה.
+      en:
+        title: Rh antibodies and anti-D for Rh-negative women
+        why: Given again after the birth.
+    window: { anchor: LMP, start_days: 189, end_days: 203 }
+    applies_if: { rh_negative: true }
+    coverage: basket
+    priority: critical
+    sources:
+      - https://www.israelibaby.co.il/pregnancy-tests-by-weeks
+    review_by: "2027-03-01"
+
+  - id: preg.epds-screen
+    kind: schedule
+    version: 1
+    country: IL
+    phase: pregnancy
+    category: visit
+    locales:
+      he:
+        title: שאלון דיכאון (EPDS)
+        why: לפי חוזר משרד הבריאות, מגיל ההריון 26 שבועות, וחוזר אחרי הלידה.
+      en:
+        title: Depression screen (EPDS)
+        why: Under a Ministry of Health directive, from 26 weeks, and repeated after the birth.
+    window: { anchor: LMP, start_days: 182, end_days: 280 }
+    coverage: basket
+    priority: important
+    sources:
+      - http://midaat.org.il/articles/health-and-sickness/pregnancy-follow-up/
+    review_by: "2027-03-01"
+
+  - id: preg.growth-scan
+    kind: schedule
+    version: 1
+    country: IL
+    phase: pregnancy
+    category: test
+    locales:
+      he:
+        title: סקירה שלישית — הערכת גדילה
+        why: שבועות 30 עד 32.
+      en:
+        title: Third-trimester growth scan
+        why: Weeks 30 to 32.
+    window: { anchor: LMP, start_days: 210, end_days: 230 }
+    coverage: basket
+    priority: important
+    sources:
+      - https://www.machonorly.com/%D7%9C%D7%95%D7%97-%D7%96%D7%9E%D7%A0%D7%99%D7%9D-%D7%9C%D7%9E%D7%A2%D7%A7%D7%91-%D7%94%D7%A8%D7%99%D7%95%D7%9F-%D7%95%D7%94%D7%A0%D7%97%D7%99%D7%95%D7%AA-%D7%9B%D7%9C%D7%9C%D7%99%D7%95%D7%AA.html
+    review_by: "2027-03-01"
+
+  - id: preg.birth-prep-course
+    kind: schedule
+    version: 1
+    country: IL
+    phase: pregnancy
+    category: course
+    locales:
+      he:
+        title: קורס הכנה ללידה
+        why: להירשם מראש — קורסים מתמלאים. קופות החולים מחזירות חלק מהעלות.
+      en:
+        title: Birth preparation course
+        why: Book ahead, courses fill up. The health funds refund part of the cost.
+    window: { anchor: LMP, start_days: 140, end_days: 196 }
+    coverage: supplementary
+    priority: important
+    sources:
+      - http://midaat.org.il/articles/health-and-sickness/pregnancy-follow-up/
+    review_by: "2027-03-01"
+
+  - id: preg.post-term-monitoring
+    kind: schedule
+    version: 1
+    country: IL
+    phase: pregnancy
+    category: visit
+    locales:
+      he:
+        title: מעקב הריון עודף
+        why: מונון ואולטרסאונד. סביב שבוע 41 מתקיים דיון על זירוז.
+      en:
+        title: Post-term monitoring
+        why: CTG and ultrasound. Around week 41 there is a discussion about induction.
+    window: { anchor: LMP, start_days: 280, end_days: 294 }
+    coverage: basket
+    priority: critical
+    sources:
+      - https://www.israelibaby.co.il/pregnancy-tests-by-weeks
+    review_by: "2027-03-01"
+
+  - id: preg.birth-grant
+    kind: schedule
+    version: 1
+    country: IL
+    phase: admin
+    category: right
+    locales:
+      he:
+        title: מענק לידה מביטוח לאומי
+        why: כסף, לא ציוד. בית החולים מדווח על הלידה והמענק משולם אוטומטית. 2,103 ש"ח לילד ראשון מ-01.01.2026.
+      en:
+        title: Birth grant from Bituach Leumi
+        why: Money, not goods. The hospital reports the birth and the grant is paid automatically. ₪2,103 for a first child from 01.01.2026.
+    window: { anchor: EDD, start_days: -30, end_days: 60 }
+    coverage: free
+    priority: important
+    sources:
+      - https://www.btl.gov.il/benefits/maternity/maanakleda/Pages/ShiurMaanakLeda.aspx
+    valid_from: "2026-01-01"
+    review_by: "2027-01-15"
+    notes: >-
+      Indexed annually, so this item is force-reviewed every January. Twins are
+      ₪10,514 and triplets ₪15,771 from 01.01.2026 — those belong in separate
+      items with applies_if.fetuses once multiples are supported.
