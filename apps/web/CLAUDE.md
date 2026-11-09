@@ -31,6 +31,22 @@ service layer. The i18n skeleton landed at roadmap step 2; the first real screen
   Serwist is wired up at step 6.
 - Lint with `pnpm lint` from the root. `next lint` was removed in 16.
 
+## A static shell must not become a static household
+
+`app/[locale]/layout.tsx` exports `generateStaticParams`, so the locale shell
+prerenders. That is correct for a public shell and **dangerous for anything
+below it**: a route that reads a household's data and does not force itself
+dynamic inherits a prerenderable parent, and Next will bake one family's health
+data into a build artefact served to everyone. Next.js 16's caching being
+opt-in lowers the odds; it does not remove them, because a page that reads only
+through a service and never touches a request API is still analysable as
+static.
+
+So, from step 5: **every authenticated segment either reads a request API
+(`cookies()`, `connection()`) or sets `export const dynamic = 'force-dynamic'`,
+and `generateStaticParams` stays on the public shell.** Worth an assertion at
+step 5 that no household route appears in `prerender-manifest.json`.
+
 ## Validation
 
 One zod schema per input, in a file shared by the UI, the server action, the API
