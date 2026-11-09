@@ -61,3 +61,75 @@ written.
 **Step 1**, unchanged, still blocked on the current week and ultrasound-corrected
 EDD and on the Supabase, Vercel and Anthropic accounts. PR #1 is open, green and
 awaiting review.
+
+---
+
+# 2026-11-09 (later) · Things re-scoped, repo gated
+
+**Goal:** make Things recommendation-first rather than CSV-first, research what
+is actually necessary from real sources, add decision hints, keep the
+recommendations live, and gate `main` behind a PR and CI.
+
+**Outcome:** done as design and governance. Two ADRs, a feature plan, step 8
+split into 8a/8b, a new hard rule, a branch-protection script, a PR template and
+Dependabot. No application code. `pnpm check` green.
+
+## What was learned
+
+**1. Reading the real data overturned the feature, not just its details.** Four
+real family lists — 61, 144, 123 and 165 items — were the seed corpus. Between
+them they mark a cot bumper (`נחשוש`) as **mandatory**, a head guard as medium
+priority, and a side-sleeping positioning pillow as something to take from a
+grandparent. The MoH's room-preparation page says the cot holds a fitted sheet
+and a blanket only, naming `נחשוש` and `מגן ראש` explicitly; the AAP has advised
+against positioners since 2011; the US banned bumpers and inclined sleepers in 2022.
+
+So the obvious design — merge real lists, rank by how many include an item — has
+a concrete, reproducible failure: **it recommends a cot bumper as mandatory.**
+That is now hard rule 11 and ADR-0005: safety is a veto, not a vote, enforced by
+a zod refinement rather than by review.
+
+The general lesson: when a feature aggregates what people actually do, the
+aggregate can be worse than any single input. Look for the case where popularity
+and safety disagree _before_ designing the ranking.
+
+**2. One field was hiding three.** "How necessary" could not hold the data:
+necessity, timing and how-you-get-it are independent, and the lists prove it with
+"comes in the birth package", "we got it as a gift", "take from mum", "not until
+sitting age". Collapsing them loses the answer the parent wanted.
+
+**3. A requirement had to be narrowed, with reasons.** "Make the recommendations
+live and get updates from the relevant sources" named baby shops and mother
+forums. Scraping those was declined in ADR-0006 on three grounds — retailer terms
+and `robots.txt`, a weekly diff against a shop being almost all price churn that
+would bury the authoritative changes, and forum content being anecdotal and
+demonstrably recommending unsafe products. A forum list still enters Kenn, as a
+named `lists` provenance entry added by a human. Narrowing an ask is fine when
+the reasons are concrete and the alternative path is spelled out.
+
+**4. Configuration belongs in git, not in a settings page.** Branch protection
+went in as `scripts/setup-branch-protection.sh` rather than as instructions,
+because a ruleset nobody can review drifts silently. Rulesets, not classic
+protection, since they work on private repositories on every plan. Zero required
+approvals is the deliberate temporary setting, with `--approvals 1` as the single
+change when code review starts.
+
+## Not done
+
+- **The script has not been run.** This session has content read/write on the
+  repository but not administration, so a repo admin runs it once.
+- Three settings a script cannot reach: secret scanning with push protection,
+  Dependabot alerts, auto-delete head branches.
+- The Class B editorial source list is not yet named. Needed before step 13.
+
+## Rule candidates
+
+| Candidate                                                                                                                   | Automatable? | Status                                                                         |
+| --------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------ |
+| "Safety vetoes popularity; an authority verdict is not outvoted"                                                            | yes          | **promoted** — hard rule 11, ADR-0005, enforced by a zod refinement at step 8a |
+| "When a feature aggregates real behaviour, find the case where popularity and safety disagree before designing the ranking" | no           | first occurrence — stays here                                                  |
+| "Repo configuration goes in a script in git, not in a settings page"                                                        | partly       | first occurrence — stays here                                                  |
+
+## Next
+
+**Step 1**, unchanged. Things 8a/8b sit in Release 1 after it.

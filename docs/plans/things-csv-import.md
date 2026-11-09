@@ -1,5 +1,14 @@
 # Things: the shopping-list CSV import contract
 
+> **CSV import is a convenience, not the way a family gets a list.** The primary
+> path is the recommended catalogue in
+> [`recommended-lists.md`](recommended-lists.md): a curated list filtered to the
+> family's profile, which the parent ticks. This document stays because the
+> importer is still built at step 8b, and because the file in hand taught us the
+> column shape and the failure modes. The importer should also try to match an
+> imported row to a catalogue item, so a family arriving with a spreadsheet
+> inherits the guidance rather than a bare row of text.
+
 Written at step 0 (2026-11-09) from the working re-export, so step 8 can build
 the importer against a known shape. **The file itself is household data and is
 not in this repository** — it lives with the family and is attached to the

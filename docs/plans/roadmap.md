@@ -60,12 +60,17 @@ flowchart LR
       the build on a custom webpack config. Verify early.
 - [ ] **7.** Safety center v1: offline emergency card, red-flag cards, safe-sleep
       and shelter checklists, car automation guide.
-- [ ] **8.** Things: generic CSV import and export, budget, gift registry.
-      No longer blocked — build the importer against
-      [`things-csv-import.md`](things-csv-import.md), which carries the column
-      contract, the tracking parameters to strip (and the one, `variant`, that
-      must be kept), the destroyed-export check, and two gaps it exposes in the
-      item model: a sourcing note, and a required flag separate from `status`.
+- [ ] **8a.** Things, the mechanism: `kind: thing` in the KB schema with the
+      safety-veto refinement, the profile hints as a migration with RLS and its
+      pgTAP test, catalogue filtering in `packages/engine`, the picker UI and the
+      budget view. Design: [`recommended-lists.md`](recommended-lists.md).
+- [ ] **8b.** Things, the content: seed the catalogue from the four real lists —
+      **safety overrides first** — then the CSV importer per
+      [`things-csv-import.md`](things-csv-import.md), then the gift registry.
+      The importer also matches an imported row to a catalogue item, so a family
+      arriving with a spreadsheet inherits the guidance. Two gaps the real data
+      exposed still need deciding: a sourcing note, and a required flag separate
+      from `status`.
 
 ### Gate A — both parents use it daily for two weeks
 
@@ -73,6 +78,9 @@ flowchart LR
 - [ ] A window has opened, been reminded, and been ticked by each parent
 - [ ] No entry left in `knip.json`'s `ignoreDependencies` for a dependency
       nothing imports
+- [ ] Every catalogue item marked `unsafe` or `discouraged` cites a named
+      authority and a source URL, and none can be added to a list without an
+      explicit acknowledgement
 
 ## Release 2 — AI and birth (before week 34)
 
@@ -86,7 +94,10 @@ flowchart LR
 - [ ] **12.** Birth mode: hospital bag, contraction timer, kick counter,
       "we're going" message.
 - [ ] **13.** Gov watcher with the PR flow, plus recall matching. Adds
-      `watcher.yml`.
+      `watcher.yml`. Carries the Class A and Class B source lists from
+      [ADR-0006](../adr/0006-source-policy-for-live-recommendation-updates.md):
+      authorities may set a safety verdict, editorial guides may only propose a
+      catalogue change, and retailers and parent forums are **not scraped**.
 
 ### Gate B — birth mode tested by week 34
 

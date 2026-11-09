@@ -621,7 +621,7 @@ kenn/
 ├── packages/
 │   ├── engine/                   # pure TS: anchors, windows, rules, materialize()
 │   ├── kb/
-│   │   ├── content/              # pregnancy/*.yaml, baby/*.yaml, safety/*.yaml, rights/*.yaml
+│   │   ├── content/              # pregnancy/, baby/, safety/, rights/, things/ (*.yaml)
 │   │   ├── schema.ts             # zod schema for a KB item
 │   │   └── scripts/              # validate, seed, csv-to-yaml
 │   ├── db/
@@ -687,6 +687,41 @@ flowchart LR
 ```
 
 Migrations apply before the new code deploys, so every migration must be backward-compatible with the running version: add columns first, remove them a release later.
+
+### Branch protection and the PR gate
+
+`main` is protected by a GitHub **ruleset** — rulesets rather than classic branch
+protection, because they work on private repositories on every plan. Set it once
+with `./scripts/setup-branch-protection.sh`, which is in git so the configuration
+is reviewable rather than remembered from a settings page.
+
+| Rule                     | Effect                                                                                                                                 |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `pull_request`           | No direct pushes to `main`. **Zero required approvals for now**, so whoever opens a PR can merge it once CI is green.                  |
+| `required_status_checks` | Both CI jobs must pass: `Typecheck, lint and test` and `Gov watcher (Python)`. `strict` is on, so a PR must be up to date with `main`. |
+| `non_fast_forward`       | No force pushes. History on `main` is append-only.                                                                                     |
+| `deletion`               | `main` cannot be deleted.                                                                                                              |
+| Thread resolution        | Review conversations must be resolved before merge.                                                                                    |
+
+Zero approvals is deliberate and temporary: it keeps `main` safe from an
+accidental push or a red build while a single builder still works alone. **When
+code review starts, run `./scripts/setup-branch-protection.sh --approvals 1`** —
+that is the only change needed, and a `CODEOWNERS` file can follow.
+
+The required-check names are the `name:` of each job in `ci.yml`. Renaming a job
+there silently stops the check being required, so rename both together.
+
+Three settings the script cannot reach, worth turning on in the repository's
+Security and analysis settings: secret scanning with push protection, Dependabot
+alerts, and auto-deleting head branches after merge.
+
+`.github/dependabot.yml` proposes npm, pip and Actions upgrades weekly, grouped
+so dev tooling arrives as one PR. It ignores major TypeScript upgrades, because
+TypeScript 7 would break the linter (ADR-0002).
+
+`.github/pull_request_template.md` carries the conditional checklists: the
+database section appears for anyone touching migrations, the guidance section for
+anyone touching the KB, the AI section for anyone touching MCP or the coach.
 
 ## AI build system
 

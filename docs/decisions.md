@@ -11,6 +11,88 @@ log from step 0 onward.**
 
 ---
 
+## 2026-11-09 · Things re-scoped, and the repo gated
+
+Product change plus repo governance. Still no application code.
+
+### Decided
+
+- **Things is recommendation-first, not CSV-first.** A family gets a curated
+  catalogue filtered to their profile and ticks what they want. CSV import is a
+  convenience for people who already keep a spreadsheet. Design:
+  [`plans/recommended-lists.md`](plans/recommended-lists.md).
+- **The catalogue is KB content** (`kind: thing`, under
+  `packages/kb/content/things/`): versioned in git, both locales, sources
+  required, `review_by` required, changed only by a merged PR. A recommendation
+  to buy something is guidance.
+  [ADR-0005](adr/0005-recommendation-catalogue-in-kb-with-safety-veto.md)
+- **Safety vetoes popularity — now hard rule 11 in `CLAUDE.md`.** Four real
+  family lists were used as the seed corpus. Between them they mark a cot bumper
+  (`נחשוש`) as **mandatory**, a head guard (`מגן ראש`) as medium priority, and a
+  side-sleeping positioning pillow as available at a grandparent's. The MoH's
+  room-preparation page directs that the cot hold a fitted sheet and a blanket
+  only — no pillows, toys, dolls, `נחשוש`, `מגן ראש` or `מגן מיטה` — and the AAP
+  has advised against positioners since 2011, with the US banning bumpers and
+  inclined sleepers outright in 2022. **A catalogue merged by popularity would
+  recommend a cot bumper as mandatory.** So `necessity: unsafe` requires a named
+  authority and a source, a zod refinement fails CI without one, and no
+  popularity signal can raise it.
+- **Community lists are provenance, never sources.** A family spreadsheet or a
+  forum list goes in `lists` with the tier it assigned; only an authority goes in
+  `sources`. This is what stops a spreadsheet becoming a citation.
+- **Necessity is three axes**, because one field loses the answer: how necessary,
+  when it is needed, and how it is acquired. The real lists are full of "comes in
+  the birth package", "we got it as a gift" and "take from mum".
+- **Decision hints** reuse the existing `applies_if` mechanism: baby room, home
+  size and floor and lift, budget, season at birth (derived from the EDD, never
+  asked), car, feeding intent, family who can lend, firstborn, customs.
+- **Live updates: three source classes.**
+  [ADR-0006](adr/0006-source-policy-for-live-recommendation-updates.md).
+  **A, authoritative** (MoH, Beterem, recalls, CPSC, EU Safety Gate, Bituach
+  Leumi) — watched weekly, may set a safety verdict. **B, editorial** (parenting
+  portals, health-fund guides) — watched weekly, may only propose. **C, retailers
+  and parent forums — read by a human, never scraped**, for three reasons:
+  retailer terms and `robots.txt` forbid it, a weekly diff against a shop is
+  almost all price churn that would bury the Class A changes, and forum content
+  is anecdotal and demonstrably recommends unsafe products. **This narrows the
+  original ask**, which named baby shops and mother forums as live sources.
+- **Step 8 splits into 8a** (mechanism: schema, profile hints, filtering, picker,
+  budget) **and 8b** (content: seed the catalogue, safety overrides first, then
+  the importer and the registry). Numbered 8a/8b so steps 9–17 keep their
+  numbers.
+- **`main` is gated.** A GitHub ruleset requires a PR and both CI jobs, blocks
+  force pushes and deletion, and requires thread resolution — with **zero
+  required approvals for now**, so a PR can be merged by whoever opened it once
+  CI is green. Configured by `scripts/setup-branch-protection.sh`, in git rather
+  than remembered from a settings page; `--approvals 1` flips it when code review
+  starts. Plus `.github/pull_request_template.md` with conditional checklists and
+  `.github/dependabot.yml`, which ignores major TypeScript upgrades per ADR-0002.
+
+### Open
+
+- **Three repository settings a script cannot reach**, worth turning on: secret
+  scanning with push protection, Dependabot alerts, auto-delete head branches.
+- **`scripts/setup-branch-protection.sh` has not been run.** This session's
+  GitHub access is read/write for content but not for repository administration,
+  so a repo admin runs it once.
+- **Which editorial sources are Class B**, by name, with their URLs. Needed
+  before step 13, not before 8a.
+- **The birth-grant wording.** Israel's `מענק לידה` is money (₪2,103 for a first
+  child from 01.01.2026), not a box of goods; the "birth package" the lists refer
+  to is a commercial or health-fund starter kit whose contents vary. What the
+  catalogue says about `how_acquired: starter_kit` needs a source before it ships.
+- The two `inventory_item` gaps from the follow-up entry below: a sourcing note,
+  and a required flag separate from `status`. ADR-0005 settles the second as part
+  of `necessity`; the first is still open.
+- Unchanged: the current week and EDD, and the Supabase, Vercel and Anthropic
+  accounts, still block step 1. Yarden's role.
+
+### Next
+
+**Step 1**, unchanged. Things 8a/8b remain in Release 1 after it.
+
+---
+
 ## 2026-11-09 · step 0 follow-up
 
 Two items that step 0 left open are now closed. No code changed.

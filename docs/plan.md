@@ -63,25 +63,25 @@ You two are user zero; every other group below needs one onboarding answer or on
 
 v1 is done when you both sign in on your phones, see this week, tick an item, and the other phone shows it within seconds, with a reminder before every window closes.
 
-| Module                    | What it does                                                                                                                                                                   | Phase                 |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------- |
-| Onboarding                | 2-minute wizard: dating method (LMP, ultrasound, IVF transfer), number of babies, first or later child, health fund and tier, language, customs; builds your personal schedule | v1                    |
-| Today (היום)              | Week N or baby age, next 3 due items, overdue in red, one fetal/baby card                                                                                                      | v1                    |
-| Timeline                  | Pregnancy weeks, then baby months, with every window drawn on it                                                                                                               | v1                    |
-| Checklist                 | Tests, vaccines, Tipat Halav, admin and rights, dated from your anchors                                                                                                        | v1                    |
-| Calendar feed             | Private ICS link: every window appears in Google or Apple Calendar                                                                                                             | v1                    |
-| Safety center             | Emergency card, red flags, safe sleep, shelter, car, recalls (see Safety center)                                                                                               | v1 core, grows by age |
-| Things                    | Shopping list: need / ordered / have / borrowed, budget, gift registry, recall checks                                                                                          | v1.5                  |
-| Import / export           | Any CSV in (mapped and previewed), everything out as CSV, JSON or a PDF summary                                                                                                | v1.5                  |
-| Birth mode                | Hospital bag, 5-1-1 contraction timer, kick counter, "we're going" message to family                                                                                           | v2 (by week 34)       |
-| MCP                       | Claude or any MCP client reads your state and updates tasks, notes, inventory                                                                                                  | v2                    |
-| Coach                     | Weekly check-in, decision deep-dives, pre-visit prep, voice capture after visits                                                                                               | v2                    |
-| Milestones and growth     | CDC 2022 + Israeli scale, corrected age, WHO curves                                                                                                                            | v2 (needed at birth)  |
-| Medicine and allergen log | What was given, when, by whom; allergen introductions and reactions                                                                                                            | v2 (at birth)         |
-| Check-ins                 | Every 2 weeks for both parents: mood (EPDS-based), sleep, load split                                                                                                           | v2                    |
-| Library                   | Debates, approaches, customs, each with an evidence badge                                                                                                                      | v2                    |
-| Sharing                   | Family, caregiver handoff, expiring links, gift registry                                                                                                                       | v2                    |
-| Documents                 | Results and scans, private storage                                                                                                                                             | v3                    |
+| Module                    | What it does                                                                                                                                                                                                       | Phase                 |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------- |
+| Onboarding                | 2-minute wizard: dating method (LMP, ultrasound, IVF transfer), number of babies, first or later child, health fund and tier, language, customs; builds your personal schedule                                     | v1                    |
+| Today (היום)              | Week N or baby age, next 3 due items, overdue in red, one fetal/baby card                                                                                                                                          | v1                    |
+| Timeline                  | Pregnancy weeks, then baby months, with every window drawn on it                                                                                                                                                   | v1                    |
+| Checklist                 | Tests, vaccines, Tipat Halav, admin and rights, dated from your anchors                                                                                                                                            | v1                    |
+| Calendar feed             | Private ICS link: every window appears in Google or Apple Calendar                                                                                                                                                 | v1                    |
+| Safety center             | Emergency card, red flags, safe sleep, shelter, car, recalls (see Safety center)                                                                                                                                   | v1 core, grows by age |
+| Things                    | Recommended catalogue filtered to your home, budget, season and car; tick what you want; then need / ordered / have / borrowed, budget, gift registry, recall checks. CSV import is a convenience, not the way in. | v1.5                  |
+| Import / export           | Any CSV in (mapped and previewed), everything out as CSV, JSON or a PDF summary                                                                                                                                    | v1.5                  |
+| Birth mode                | Hospital bag, 5-1-1 contraction timer, kick counter, "we're going" message to family                                                                                                                               | v2 (by week 34)       |
+| MCP                       | Claude or any MCP client reads your state and updates tasks, notes, inventory                                                                                                                                      | v2                    |
+| Coach                     | Weekly check-in, decision deep-dives, pre-visit prep, voice capture after visits                                                                                                                                   | v2                    |
+| Milestones and growth     | CDC 2022 + Israeli scale, corrected age, WHO curves                                                                                                                                                                | v2 (needed at birth)  |
+| Medicine and allergen log | What was given, when, by whom; allergen introductions and reactions                                                                                                                                                | v2 (at birth)         |
+| Check-ins                 | Every 2 weeks for both parents: mood (EPDS-based), sleep, load split                                                                                                                                               | v2                    |
+| Library                   | Debates, approaches, customs, each with an evidence badge                                                                                                                                                          | v2                    |
+| Sharing                   | Family, caregiver handoff, expiring links, gift registry                                                                                                                                                           | v2                    |
+| Documents                 | Results and scans, private storage                                                                                                                                                                                 | v3                    |
 
 ## Safety center
 
@@ -289,6 +289,16 @@ Only 4 items have a price: the Cybex stroller at ₪3,800, the Chicco Fit 360 ca
 
 The first export was unusable, and it is worth knowing why, because the importer should detect it: Excel's "Save as CSV" on a Hebrew locale replaced every Hebrew character with a literal `?` byte rather than mis-encoding it, so no decoding could recover the text. Download from Google Sheets as CSV instead.
 
+**How a family gets a list:** not from a blank page and not from a CSV. Kenn ships a curated catalogue of recommendable items, filtered to the family's profile, and the parent ticks what they want. The catalogue lives in the KB — versioned in git, both locales, sources required, changed only by a merged PR — because a recommendation to buy something is guidance, and some of it is safety-critical. Full design in [`plans/recommended-lists.md`](plans/recommended-lists.md); the decisions are [ADR-0005](adr/0005-recommendation-catalogue-in-kb-with-safety-veto.md) and [ADR-0006](adr/0006-source-policy-for-live-recommendation-updates.md).
+
+**Safety vetoes popularity.** Four real family lists were used as the seed corpus, and between them they mark a cot bumper (`נחשוש`) as mandatory, a head guard (`מגן ראש`) as medium priority, and a side-sleeping positioning pillow as available at a grandparent's. The MoH's room-preparation page directs that the cot hold a fitted sheet and a blanket only — no pillows, toys, dolls, `נחשוש`, `מגן ראש` or `מגן מיטה` — and the AAP has advised against positioners since 2011, with the US banning bumpers and inclined sleepers outright in 2022. A catalogue that merged real lists by popularity would therefore recommend a cot bumper as mandatory. So `necessity: unsafe` requires a named authority and a source, CI fails without one, and no popularity signal can raise it. Community lists are _provenance_, never sources.
+
+**Necessity is three axes, not one:** how necessary (essential / recommended / optional / discouraged / unsafe), when you need it (before birth / hospital bag / first weeks / by month / when needed), and how you get it (buy / often gifted / borrowable / starter kit / rent). The real lists are full of "comes in the birth package", "we got it as a gift" and "take from mum" — a recommendation that ignores that costs real money.
+
+**Decision hints** filter the catalogue through the existing `applies_if` mechanism: whether there is a separate baby room, home size and floor and lift, budget, season at birth (derived from the EDD, never asked), whether there is a car, feeding intent, whether family can lend, firstborn or later, and customs.
+
+Note on the birth grant: Israel's `מענק לידה` is **money**, not a box of goods — ₪2,103 for a first child from 01.01.2026. The "birth package" the lists refer to is a commercial or health-fund starter kit whose contents vary and are not an official entitlement. The catalogue must not imply otherwise.
+
 **Item model:**
 
 | Field                      | Notes                                                             |
@@ -394,7 +404,9 @@ flowchart LR
 5. Onboarding wizard, Today and Checklist, realtime sync, production deploy, PWA on both phones.
 6. Reminders: Web Push, the Sunday digest and the ICS calendar feed.
 7. Safety center v1: offline emergency card, red-flag cards, safe-sleep and shelter checklists, car automation guide.
-8. Things: generic CSV import and export, budget, gift registry.
+8. Things: the recommended catalogue and build-your-own list, budget, gift registry; CSV import
+   as a convenience. Splits into 8a (mechanism) and 8b (content) — see
+   [`plans/recommended-lists.md`](plans/recommended-lists.md).
 
 **Release 2: AI and birth (before week 34)**
 

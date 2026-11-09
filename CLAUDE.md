@@ -48,6 +48,12 @@ These are not style preferences. A PR that breaks one does not merge.
    typescript-eslint cannot load it, so Kenn pins TypeScript 6.0.3.
 10. **Guidance enters only through a merged PR.** The gov watcher proposes; a human
     merges. Nothing scraped is ever auto-applied.
+11. **Safety vetoes popularity.** A Things catalogue item marked `unsafe` or
+    `discouraged` needs a named authority and a source URL, and CI fails without
+    one. No popularity count, community list or user request raises it. Community
+    lists are _provenance_ (`lists`), never _sources_. See ADR-0005 — the real
+    seed lists mark a cot bumper as mandatory, and the MoH says the cot holds a
+    fitted sheet and a blanket only.
 
 ## Definition of done
 
