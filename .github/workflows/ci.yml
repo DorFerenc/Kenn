@@ -41,6 +41,12 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      - name: No private data or key material
+        # No names, no real email addresses, no key shapes. See
+        # scripts/check-private.mjs — it reads this clone's git identity at
+        # runtime rather than committing a denylist of names.
+        run: pnpm check:private
+
       - name: Lint
         run: pnpm lint
 
@@ -67,6 +73,13 @@ jobs:
       - name: Dead code
         run: pnpm knip
 
+      - name: The gate is stable, not merely green
+        # A generator that is not idempotent passes once and fails next time.
+        # That happened: docs:gen wrote files after Prettier had run, so `check`
+        # went green and then red. This runs the gate again and compares a hash
+        # of every tracked file.
+        run: pnpm check:twice
+
   database:
     name: Migrations and RLS
     runs-on: ubuntu-latest
@@ -76,7 +89,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@9bbca1e9dc2902adb87e8780fe5c98796985a62d # v6.1.1
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
 
       - name: Set up Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0

@@ -48,7 +48,12 @@ These are not style preferences. A PR that breaks one does not merge.
    typescript-eslint cannot load it, so Kenn pins TypeScript 6.0.3.
 10. **Guidance enters only through a merged PR.** The gov watcher proposes; a human
     merges. Nothing scraped is ever auto-applied.
-11. **Safety vetoes popularity.** A Things catalogue item marked `unsafe` or
+11. **No private data in the repository.** No real names — use roles, as the
+    diagrams do. No real email addresses; `.test` domains only. No keys, tokens
+    or household data: that belongs in Postgres behind RLS, and `seed.sql` is a
+    fake household because it loads into every preview environment.
+    `pnpm check:private` enforces this, and runs in CI.
+12. **Safety vetoes popularity.** A Things catalogue item marked `unsafe` or
     `discouraged` needs a named authority and a source URL, and CI fails without
     one. No popularity count, community list or user request raises it. Community
     lists are _provenance_ (`lists`), never _sources_. See ADR-0005 — the real
@@ -64,19 +69,21 @@ roadmap step".
 
 ## Commands
 
-| Command                     | Does                                                 |
-| --------------------------- | ---------------------------------------------------- |
-| `pnpm i`                    | Install all workspaces                               |
-| `pnpm dev`                  | Next.js on localhost against local Supabase          |
-| `pnpm db:start` / `db:stop` | Local Supabase in Docker                             |
-| `pnpm db:new <name>`        | New empty migration                                  |
-| `pnpm db:types`             | Regenerate `packages/db/types.ts` from the schema    |
-| `pnpm db:test`              | pgTAP RLS tests                                      |
-| `pnpm test`                 | Vitest (engine, services)                            |
-| `pnpm e2e`                  | Playwright against the local app                     |
-| `pnpm kb:validate`          | Validate every KB YAML, check locales and sources    |
-| `pnpm docs:gen`             | Regenerate the ER diagram, KB catalog, MCP tool list |
-| `pnpm check`                | Everything CI runs, in one go                        |
+| Command                     | Does                                                      |
+| --------------------------- | --------------------------------------------------------- |
+| `pnpm i`                    | Install all workspaces                                    |
+| `pnpm dev`                  | Next.js on localhost against local Supabase               |
+| `pnpm db:start` / `db:stop` | Local Supabase in Docker                                  |
+| `pnpm db:new <name>`        | New empty migration                                       |
+| `pnpm db:types`             | Regenerate `packages/db/types.ts` from the schema         |
+| `pnpm db:test`              | pgTAP RLS tests                                           |
+| `pnpm test`                 | Vitest (engine, services)                                 |
+| `pnpm e2e`                  | Playwright against the local app                          |
+| `pnpm kb:validate`          | Validate every KB YAML, check locales and sources         |
+| `pnpm docs:gen`             | Regenerate the ER diagram, KB catalog, MCP tool list      |
+| `pnpm check`                | Everything CI runs, in one go                             |
+| `pnpm check:twice`          | Runs the gate twice; proves the generators are idempotent |
+| `pnpm check:private`        | Refuses real names, real addresses and key material       |
 
 ## Where things live
 
@@ -115,6 +122,19 @@ explicit that a `Bash` deny rule covers the invocation normally produced and is
 `git -C . push --force`, and a `Read` deny rule does not stop `grep -r` or a
 script that opens the file itself. The real controls are RLS, scoped tokens, MFA
 and secrets that never leave Vercel, Supabase and GitHub.
+
+## Three things that will stop you
+
+- **A commit runs `pnpm check` first.** `.githooks/pre-commit` refuses a red
+  commit, and refuses one where `pnpm check` regenerated files you have not
+  staged. `SKIP_CHECK=1 git commit` is the deliberate-WIP escape hatch.
+- **Files written by shell redirection are still checked.** A `cat > file <<EOF`
+  never reaches the Edit/Write hooks, so `PostToolUse(Bash)` formats whatever
+  changed and re-runs the migration guard. Writing a migration with a heredoc
+  does not dodge its checklist.
+- **The gate must be stable, not green once.** `pnpm check` regenerates the ER
+  diagram and the KB catalogue; a generator that is not idempotent passes once
+  and fails next time. `pnpm check:twice` is in CI.
 
 ## Session protocol
 

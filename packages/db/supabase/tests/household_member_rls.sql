@@ -17,7 +17,7 @@ select plan(14);
 
 insert into auth.users (id, email, instance_id, aud, role)
 values
-  ('aaaaaaaa-0000-0000-0000-000000000001', 'dor@example.test',
+  ('aaaaaaaa-0000-0000-0000-000000000001', 'owner@example.test',
    '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated'),
   ('bbbbbbbb-0000-0000-0000-000000000002', 'stranger@example.test',
    '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated');

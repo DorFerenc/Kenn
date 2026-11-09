@@ -1,10 +1,10 @@
 sequenceDiagram
-  actor Y as Yarden (PWA)
+  actor Y as Parent B (PWA)
   participant W as Server action
   participant S as Service layer
   participant DB as Postgres (RLS)
   participant RT as Realtime
-  actor D as Dor (PWA)
+  actor D as Parent A (PWA)
   Y->>W: completeTask(taskId, note)
   Note over Y: Optimistic UI, item ticked
   W->>S: completeTask(ctx, taskId, note)
@@ -15,4 +15,4 @@ sequenceDiagram
   W-->>Y: Confirmed
   DB-)RT: Change event
   RT-)D: task_instance updated
-  Note over D: Today re-renders with Yarden's avatar
+  Note over D: Today re-renders with Parent B's avatar
