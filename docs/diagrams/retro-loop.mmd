@@ -1,0 +1,19 @@
+flowchart TB
+  S["Session starts:<br/>CLAUDE.md + skill loaded"] --> W["Plan, approve, build, test"]
+  W --> R["reviewer agent"]
+  R --> F["Findings logged in<br/>review-findings.md"]
+  W --> D["/update-docs"]
+  D --> T["/retro writes<br/>docs/learnings/date-topic.md"]
+  F --> T
+  T --> Q{"Seen before?"}
+  Q -- "first time" --> K["Kept in the learning file only"]
+  Q -- "twice or more" --> P{"Can a tool check it?"}
+  P -- yes --> L["Lint rule, test or hook"]
+  P -- no --> U["Rule in CLAUDE.md<br/>or a skill checklist"]
+  L --> H["Separate commit:<br/>chore(ai)"]
+  U --> H
+  H --> A{"You approve?"}
+  A -- yes --> M["Merged: next session<br/>starts smarter"]
+  A -- no --> K
+  M --> S
+  C["Monthly /consolidate"] -.-> M

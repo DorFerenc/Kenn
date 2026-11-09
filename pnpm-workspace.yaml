@@ -1,0 +1,20 @@
+# Kenn is a pnpm workspace. See docs/architecture.md, section "Repository scaffold".
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Supply chain, part 1: refuse a version published less than 24 hours ago. A
+# compromised publish is usually caught and yanked inside that window, and
+# nothing here needs a package the day it ships. Set explicitly rather than
+# left to pnpm's default, so the value is reviewable.
+minimumReleaseAge: 1440
+
+# Supply chain, part 2: install-time build scripts run arbitrary code, so every
+# one is an explicit decision. None of these three is needed — esbuild and
+# @swc/core ship prebuilt platform binaries as optional packages, and
+# @parcel/watcher only serves knip's watch mode, which CI never runs.
+# Add a package here with `pnpm approve-builds` after deciding it is required.
+allowBuilds:
+  "@parcel/watcher": false
+  "@swc/core": false
+  esbuild: false

@@ -1,0 +1,44 @@
+{
+  "name": "kenn",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Kenn (\u05e7\u05b5\u05df) \u2014 Hebrew + English PWA that plans pregnancy, birth and the first year for Israeli families.",
+  "packageManager": "pnpm@12.18.0",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @kenn/web dev",
+    "build": "pnpm -r build",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "pnpm -r --parallel typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "e2e": "pnpm --filter @kenn/web e2e",
+    "knip": "knip",
+    "db:start": "pnpm --filter @kenn/db db:start",
+    "db:stop": "pnpm --filter @kenn/db db:stop",
+    "db:reset": "pnpm --filter @kenn/db db:reset",
+    "db:new": "pnpm --filter @kenn/db db:new",
+    "db:types": "pnpm --filter @kenn/db db:types",
+    "db:test": "pnpm --filter @kenn/db db:test",
+    "kb:validate": "pnpm --filter @kenn/kb validate",
+    "docs:gen": "node scripts/docs-gen.mjs",
+    "check": "pnpm lint && pnpm typecheck && pnpm format:check && pnpm test && pnpm kb:validate && pnpm docs:gen && pnpm knip"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.14.0",
+    "eslint-config-prettier": "10.1.8",
+    "globals": "17.14.0",
+    "knip": "6.44.1",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
+    "vitest": "5.1.0"
+  }
+}

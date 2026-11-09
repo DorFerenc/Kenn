@@ -1,0 +1,24 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/*.mjs"]
+    },
+    "apps/web": {
+      "entry": ["src/placeholder.ts"],
+      "ignoreDependencies": [
+        "@kenn/db",
+        "@kenn/engine",
+        "@kenn/kb",
+        "@kenn/ui",
+        "@serwist/next",
+        "@supabase/supabase-js",
+        "@tailwindcss/postcss",
+        "next-intl",
+        "serwist",
+        "tailwindcss",
+        "zod"
+      ]
+    }
+  }
+}

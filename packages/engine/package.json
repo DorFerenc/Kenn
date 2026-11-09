@@ -1,0 +1,16 @@
+{
+  "name": "@kenn/engine",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Pure TypeScript schedule engine: anchors, windows, rules, materialize(). No database, no clock, no framework.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3"
+  }
+}

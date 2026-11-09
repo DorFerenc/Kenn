@@ -1,0 +1,38 @@
+# Supply chain: Dependabot proposes upgrades weekly and a human merges them.
+# See docs/plan.md, section "Security", and docs/architecture.md § Technology stack.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      dev-tooling:
+        patterns:
+          ["eslint*", "@eslint/*", "typescript-eslint", "prettier", "knip", "vitest"]
+        update-types: ["minor", "patch"]
+      types:
+        patterns: ["@types/*"]
+    ignore:
+      # TypeScript 7 ships no compiler API, so typescript-eslint declares
+      # `typescript <6.1.0` and cannot load it. Pinning latest means no linter.
+      # Revisit only when TS 7.1 has a stable API AND typescript-eslint accepts
+      # it. See docs/adr/0002-pin-typescript-6-for-lint-support.md.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: pip
+    directory: /services/watcher
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3

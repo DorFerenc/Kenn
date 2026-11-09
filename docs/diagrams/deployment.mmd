@@ -1,0 +1,48 @@
+flowchart TB
+  subgraph Devices["Devices"]
+    PWA["Kenn PWA<br/>phones, laptops"]
+    AIC["AI clients<br/>Claude via MCP"]
+    CAL["Google / Apple Calendar<br/>ICS feed"]
+  end
+  subgraph Vercel["Vercel"]
+    WEB["Next.js app<br/>pages, server actions"]
+    MCP["/mcp route<br/>OAuth 2.1"]
+    ICS["/ics route<br/>hashed token"]
+    SVC["Service layer<br/>+ engine"]
+  end
+  subgraph Supabase["Supabase, Frankfurt"]
+    AUTH["Auth + MFA"]
+    PG[("Postgres + RLS")]
+    RT["Realtime"]
+    ST["Storage"]
+    CRON["pg_cron"]
+  end
+  subgraph GitHub["GitHub"]
+    REPO["Repo<br/>code + KB YAML"]
+    CI["Actions: CI + deploy"]
+    WATCH["Actions: weekly watcher"]
+  end
+  EXT["Claude API"]
+  PUSH["Web Push + Resend"]
+  GOV["MoH, BTL, Kol Zchut pages"]
+
+  PWA --> WEB
+  AIC --> MCP
+  CAL --> ICS
+  WEB --> SVC
+  MCP --> SVC
+  ICS --> SVC
+  SVC --> PG
+  SVC --> ST
+  SVC --> EXT
+  PWA --> AUTH
+  RT -.-> PWA
+  PG --> RT
+  CRON --> PUSH
+  PUSH -.-> PWA
+  REPO --> CI
+  CI --> WEB
+  CI --> PG
+  WATCH --> GOV
+  WATCH --> EXT
+  WATCH --> REPO

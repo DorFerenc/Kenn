@@ -1,0 +1,114 @@
+classDiagram
+  class Household {
+    +uuid id
+    +string name
+    +Country country
+    +Locale defaultLocale
+  }
+  class Member {
+    +uuid userId
+    +Role role
+    +Locale locale
+    +GenderForm genderForm
+  }
+  class Pregnancy {
+    +Date lmp
+    +Date edd
+    +DatingMethod datingMethod
+    +int fetuses
+    +anchors() Anchors
+  }
+  class Child {
+    +Date birthDate
+    +int gaAtBirthWeeks
+    +BirthType birthType
+    +bool firstborn
+    +correctedAge(today) Duration
+  }
+  class KbItem {
+    +string id
+    +int version
+    +Phase phase
+    +Category category
+    +Window window
+    +Condition appliesIf
+    +Map~Locale,Text~ locales
+    +List~Url~ sources
+  }
+  class Window {
+    +Anchor anchor
+    +int startDays
+    +int endDays
+    +int redFlagDays
+  }
+  class Rule {
+    <<interface>>
+    +applies(ctx) bool
+    +adjust(window, ctx) Window
+  }
+  class RsvBirthMonthRule
+  class BritMilahRule
+  class PidyonHabenRule
+  class ShabbatShiftRule
+  class ScheduleEngine {
+    +materialize(items, ctx, today) List~TaskInstance~
+  }
+  class EngineContext {
+    +Anchors anchors
+    +Profile profile
+    +List~Rule~ rules
+  }
+  class TaskInstance {
+    +uuid id
+    +string kbItemId
+    +int kbVersion
+    +Date dueStart
+    +Date dueEnd
+    +TaskStatus status
+    +uuid doneBy
+    +complete(by, note)
+    +reopen(by)
+  }
+  class InventoryItem {
+    +string name
+    +ItemStatus status
+    +int priceIls
+    +Anchor neededBy
+    +string claimedBy
+  }
+  class ShareGrant {
+    +List~Scope~ scopes
+    +string tokenHash
+    +Date expiresAt
+    +revoke()
+  }
+  class McpClient {
+    +string name
+    +List~Scope~ scopes
+    +revoke()
+  }
+  class AuditEntry {
+    +Actor actor
+    +string action
+    +json before
+    +json after
+  }
+
+  Household "1" --> "1..*" Member
+  Household "1" --> "0..1" Pregnancy
+  Household "1" --> "*" Child
+  Household "1" --> "*" TaskInstance
+  Household "1" --> "*" InventoryItem
+  Household "1" --> "*" ShareGrant
+  Household "1" --> "*" McpClient
+  Household "1" --> "*" AuditEntry
+  KbItem *-- Window
+  TaskInstance --> KbItem : from version
+  ScheduleEngine ..> KbItem : reads
+  ScheduleEngine ..> EngineContext : uses
+  ScheduleEngine ..> TaskInstance : creates
+  EngineContext o-- Rule
+  Rule <|.. RsvBirthMonthRule
+  Rule <|.. BritMilahRule
+  Rule <|.. PidyonHabenRule
+  Rule <|.. ShabbatShiftRule

@@ -1,0 +1,29 @@
+flowchart LR
+  P(["Parent<br/>owner"])
+  F(["Family /<br/>caregiver"])
+  L(["Link viewer"])
+  A(["AI client<br/>via MCP"])
+  W(["Gov watcher<br/>scheduled"])
+  C(["Reminder job<br/>scheduled"])
+
+  subgraph Kenn
+    U1("Onboard and set anchors")
+    U2("See Today and the timeline")
+    U3("Complete or reopen a task")
+    U4("Manage Things, import CSV")
+    U5("Log medicine, allergen, growth")
+    U6("Run a coach session")
+    U7("Share a view or link")
+    U8("Connect or revoke an AI client")
+    U9("Approve a guidance change")
+    U10("Open the emergency card")
+    U11("Claim a gift")
+    U12("Receive reminders and digest")
+  end
+
+  P --- U1 & U2 & U3 & U4 & U5 & U6 & U7 & U8 & U9 & U10 & U12
+  F --- U2 & U5 & U10
+  L --- U11
+  A --- U2 & U3 & U4 & U5
+  W --- U9
+  C --- U12

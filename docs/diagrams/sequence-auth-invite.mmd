@@ -1,0 +1,22 @@
+sequenceDiagram
+  actor D as Dor
+  participant W as Next.js
+  participant AU as Supabase Auth
+  participant S as Service layer
+  participant DB as Postgres
+  actor Y as Yarden
+  D->>W: Sign in with Google
+  W->>AU: OAuth sign-in
+  AU-->>W: Session (JWT)
+  W->>AU: Require TOTP enrolment
+  D->>W: Create household
+  W->>S: createHousehold(name, locale)
+  S->>DB: INSERT household, member(owner)
+  D->>W: Invite yarden@...
+  W->>S: createInvite(email)
+  S->>DB: INSERT invite(token_hash, expires 7d)
+  S-)Y: Email with invite link
+  Y->>W: Open link, sign in, enrol MFA
+  W->>S: acceptInvite(token)
+  S->>DB: Verify hash, INSERT member(owner)
+  S-->>Y: Redirect to Today

@@ -1,0 +1,23 @@
+{
+  "name": "@kenn/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "SQL migrations, pgTAP RLS tests, seed data and the generated database types.",
+  "exports": {
+    ".": "./types.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "db:start": "supabase start --workdir .",
+    "db:stop": "supabase stop --workdir .",
+    "db:reset": "supabase db reset --workdir .",
+    "db:new": "supabase migration new --workdir .",
+    "db:types": "supabase gen types typescript --workdir . --local > types.ts",
+    "db:test": "supabase test db --workdir ."
+  },
+  "devDependencies": {
+    "supabase": "3.0.0",
+    "typescript": "6.0.3"
+  }
+}
