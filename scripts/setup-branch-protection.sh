@@ -70,13 +70,44 @@ JSON
 existing=$(gh api "repos/${REPO}/rulesets" --jq \
   ".[] | select(.name==\"${RULESET_NAME}\") | .id" 2>/dev/null || true)
 
-if [ -n "$existing" ]; then
-  printf 'Updating existing ruleset %s\n' "$existing"
-  printf '%s' "$payload" | gh api -X PUT "repos/${REPO}/rulesets/${existing}" --input -
-else
-  printf 'Creating ruleset\n'
-  printf '%s' "$payload" | gh api -X POST "repos/${REPO}/rulesets" --input -
+apply() {
+  if [ -n "$existing" ]; then
+    printf 'Updating existing ruleset %s\n' "$existing"
+    printf '%s' "$payload" | gh api -X PUT "repos/${REPO}/rulesets/${existing}" --input -
+  else
+    printf 'Creating ruleset\n'
+    printf '%s' "$payload" | gh api -X POST "repos/${REPO}/rulesets" --input -
+  fi
+}
+
+if ! out=$(apply 2>&1); then
+  printf '%s\n' "$out" >&2
+  case "$out" in
+    *'not permitted through this proxy'*|*'HTTP 403'*)
+      cat >&2 <<'HINT'
+
+This did not apply. Repository administration is blocked here.
+
+A Claude Code cloud session reaches GitHub through a proxy that permits content
+reads and writes but refuses the administration API, so a ruleset cannot be
+created from inside one however the token is scoped. Nothing is broken and
+nothing was half-applied.
+
+Run this script from your own machine, once:
+
+    gh auth login          # if you have not already
+    ./scripts/setup-branch-protection.sh
+
+Or set the same rules by hand in Settings, Rules, Rulesets: require a pull
+request with 0 required approvals, require the status checks "Typecheck, lint and
+test" and "Gov watcher (Python)", block force pushes and deletion, and require
+conversation resolution.
+HINT
+      ;;
+  esac
+  exit 1
 fi
+printf '%s\n' "$out"
 
 printf '\nDone. Verify with:\n  gh api repos/%s/rulesets --jq ".[].name"\n' "$REPO"
 printf '\nAlso worth turning on in Settings, which this script cannot set:\n'

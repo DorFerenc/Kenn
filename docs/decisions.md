@@ -72,9 +72,14 @@ Product change plus repo governance. Still no application code.
 
 - **Three repository settings a script cannot reach**, worth turning on: secret
   scanning with push protection, Dependabot alerts, auto-delete head branches.
-- **`scripts/setup-branch-protection.sh` has not been run.** This session's
-  GitHub access is read/write for content but not for repository administration,
-  so a repo admin runs it once.
+- **`scripts/setup-branch-protection.sh` has not been run — it cannot be, from
+  here.** It was tried: a Claude Code cloud session reaches GitHub through a
+  proxy that permits content reads and writes but refuses the administration API,
+  so a ruleset cannot be created from inside one even with an admin token
+  (`HTTP 403: Write access to this GitHub API path is not permitted through this
+proxy`). The script now detects that and prints what to do. **Run it once from
+  your own machine**, or set the same rules by hand in Settings → Rules →
+  Rulesets. Until then `main` is unprotected.
 - **Which editorial sources are Class B**, by name, with their URLs. Needed
   before step 13, not before 8a.
 - **The birth-grant wording.** Israel's `מענק לידה` is money (₪2,103 for a first

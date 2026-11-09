@@ -691,9 +691,13 @@ Migrations apply before the new code deploys, so every migration must be backwar
 ### Branch protection and the PR gate
 
 `main` is protected by a GitHub **ruleset** — rulesets rather than classic branch
-protection, because they work on private repositories on every plan. Set it once
-with `./scripts/setup-branch-protection.sh`, which is in git so the configuration
-is reviewable rather than remembered from a settings page.
+protection, because they work on private repositories on every plan. Set it once with `./scripts/setup-branch-protection.sh`, which is in git so the
+configuration is reviewable rather than remembered from a settings page.
+
+**Run it from your own machine, not from a Claude Code cloud session.** Such a
+session reaches GitHub through a proxy that permits content reads and writes but
+refuses the administration API, so a ruleset cannot be created from inside one
+however the token is scoped. The script detects that and says so.
 
 | Rule                     | Effect                                                                                                                                 |
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |

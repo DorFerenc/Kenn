@@ -116,8 +116,13 @@ change when code review starts.
 
 ## Not done
 
-- **The script has not been run.** This session has content read/write on the
-  repository but not administration, so a repo admin runs it once.
+- **The script could not be run from here, and that is worth knowing.** It was
+  tried. A Claude Code cloud session reaches GitHub through a proxy that permits
+  content reads and writes but refuses the administration API, so a ruleset
+  cannot be created from inside one _even though the token reports
+  `admin=true`_ — the capability check passes and the write is still refused 403.
+  Reading permissions is not the same as being able to use them. The script now
+  detects the 403 and prints the fix rather than failing opaquely.
 - Three settings a script cannot reach: secret scanning with push protection,
   Dependabot alerts, auto-delete head branches.
 - The Class B editorial source list is not yet named. Needed before step 13.
