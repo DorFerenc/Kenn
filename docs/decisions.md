@@ -11,6 +11,60 @@ log from step 0 onward.**
 
 ---
 
+## 2026-11-09 · fixes, privacy and the README
+
+Everything the steps 1/3/4 retro recorded as wrong is now fixed, and each fix is
+a tool rather than a sentence. Learning file:
+[`learnings/2026-11-09-fixes-and-privacy.md`](learnings/2026-11-09-fixes-and-privacy.md).
+
+### Decided
+
+- **A commit cannot land red.** `.githooks/pre-commit` runs `pnpm check` and
+  refuses the commit when it fails, or when the gate regenerated files that are
+  not staged. Installed by `pnpm install` via `prepare`; `SKIP_CHECK=1` bypasses
+  it for a deliberate work-in-progress commit.
+- **Shell redirection no longer dodges the hooks.** A `PostToolUse(Bash)` hook
+  formats whatever changed and re-runs `migration-guard.sh` on any touched
+  migration. Both migrations last session were written with a heredoc and the
+  guard never ran on either — a hook covering only some ways of writing a file
+  is worse than none, because it is believed.
+- **`pnpm check:twice` is in CI.** It runs the gate twice and compares a
+  `git hash-object` of every tracked file. Hashes rather than
+  `git diff --exit-code`, so it works with uncommitted work in progress.
+- **No private data in the repository — hard rule 11.** Two real first names
+  appeared in 7 files (sequence-diagram actors, prose, a pgTAP fixture email,
+  and a hardcoded `owner/repo`). All replaced with roles; the branch-protection
+  script now derives the repository from the git remote; the planning byline is
+  gone. No secrets, key material or `.env` files were found.
+- **The privacy guard carries no denylist of names**, because a denylist would
+  commit the names it exists to exclude. `scripts/check-private.mjs` checks key
+  material by shape, email addresses outside the reserved `.test` fixture
+  domains, and **whoever is configured in this clone's git identity, read at
+  runtime**. Verified by planting a JWT, a real-looking address and the
+  configured name. Runs in CI.
+- **The README now explains how to run the project**: prerequisites with
+  versions, first run, the database commands, every script, the watcher, the four
+  structural rules, how to contribute, and the privacy posture.
+
+### Open
+
+- **`core.hooksPath` is only set when `pnpm install` has work to do.** An
+  existing clone needs `pnpm hooks:install` once. A fresh clone is fine.
+- **Branch protection still is not applied.** `./scripts/setup-branch-protection.sh`
+  must run from a machine that is not a cloud session; its required-check list
+  now includes `Migrations and RLS`.
+- Everything else from the entry below, unchanged: **steps 5 and 6 cannot be
+  completed** without the Supabase, Vercel and Anthropic accounts; steps 7 and 8b
+  need `me.health.gov.il`, `btl.gov.il` and `kolzchut.org.il` on the environment
+  allowlist; the current week and EDD; the second parent's role.
+
+### Next
+
+**Step 2** — i18n skeleton and design tokens. It needs nothing external, which
+makes it the only Release 1 step that can start immediately.
+
+---
+
 ## 2026-11-09 · steps 1, 3 and 4
 
 Asked for steps 1–8, all of Release 1, in one session. Delivered steps 3 and 4
@@ -81,7 +135,7 @@ under `TZ=America/Los_Angeles`, plus the schema and generator tests.
 - **`check` should run twice in CI.** A generator that is not idempotent passes
   once and fails next time; that happened here and only a second local run caught
   it.
-- Unchanged: the current week and EDD; Yarden's role; the branch-protection
+- Unchanged: the current week and EDD; the second parent's role; the branch-protection
   script still needs running from a machine that is not a cloud session.
 
 ### Next
@@ -171,7 +225,7 @@ proxy`). The script now detects that and prints what to do. **Run it once from
   and a required flag separate from `status`. ADR-0005 settles the second as part
   of `necessity`; the first is still open.
 - Unchanged: the current week and EDD, and the Supabase, Vercel and Anthropic
-  accounts, still block step 1. Yarden's role.
+  accounts, still block step 1. the second parent's role.
 
 ### Next
 
@@ -281,7 +335,7 @@ Learning file: [`learnings/2026-11-07-step-0-bootstrap.md`](learnings/2026-11-07
   Next.js 16 fails the build on a custom webpack config. `@serwist/next@9.5.13`
   claims `next >=14` but that is untested here. **Risk on step 6**; fallback is a
   hand-written service worker for the offline emergency card.
-- **Yarden's role**: co-builder, or content and UX review?
+- **the second parent's role**: co-builder, or content and UX review?
 - Unchanged from before: store medical documents at all; whether to open it to
   other families; monthly budget ceiling; the name checks (trademark, stores,
   domain); the first five test families; which pediatrician and midwife review the
@@ -319,7 +373,7 @@ watcher. KB in git, human-approved. No end-to-end encryption in v1. Hebrew and
 English at launch. The safety centre as fixed, reviewed content. AI instructions,
 agents and skills live in the repo and improve only through approved retros.
 
-**Open:** current week and EDD; Next.js vs SvelteKit; Yarden's role; trademark
+**Open:** current week and EDD; Next.js vs SvelteKit; the second parent's role; trademark
 check.
 
 **Next:** step 1 — scaffold the repo, auth and RLS.

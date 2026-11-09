@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+#
+# Refuse a commit when the gate is red.
+#
+# This exists because a commit once landed with a failing `pnpm check` and had to
+# be amended. A red commit on a branch someone else pulls is a trap, and
+# remembering to run the gate is exactly the kind of thing a tool should do.
+#
+# Installed by `pnpm install` (the `prepare` script sets core.hooksPath).
+# Escape hatch, for a deliberate work-in-progress commit:
+#     SKIP_CHECK=1 git commit ...
+set -uo pipefail
+
+if [ "${SKIP_CHECK:-}" = "1" ]; then
+  printf 'pre-commit: skipped by SKIP_CHECK=1\n' >&2
+  exit 0
+fi
+
+root=$(git rev-parse --show-toplevel)
+cd "$root" || exit 0
+
+if ! command -v pnpm >/dev/null 2>&1; then
+  printf 'pre-commit: pnpm not on PATH; skipping the gate\n' >&2
+  exit 0
+fi
+
+printf 'pre-commit: running pnpm check (SKIP_CHECK=1 to bypass)\n' >&2
+if ! out=$(pnpm check 2>&1); then
+  printf '%s\n' "$out" >&2
+  printf '\npre-commit: the gate is red, so the commit was refused.\n' >&2
+  printf 'Fix it, or commit with SKIP_CHECK=1 if this is a deliberate WIP.\n' >&2
+  exit 1
+fi
+
+# `pnpm check` regenerates docs; if that changed anything, it belongs in this
+# commit rather than being discovered by CI.
+if ! git diff --quiet; then
+  printf 'pre-commit: `pnpm check` regenerated files that are not staged:\n' >&2
+  git diff --name-only | sed 's/^/  /' >&2
+  printf '\nStage them (git add -A) and commit again.\n' >&2
+  exit 1
+fi
+
+printf 'pre-commit: gate green\n' >&2

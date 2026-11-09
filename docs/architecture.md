@@ -1,6 +1,6 @@
 # Kenn — Engineering Design
 
-Nov 6, 2026 · @d f
+Nov 6, 2026
 
 > **Provenance.** Mirrored from the "Engineering" tab of the Kenn planning
 > document at scaffold time (roadmap step 0, 2026-11-07). **This repository copy
@@ -179,12 +179,12 @@ Five flows cover every risky path: identity, partner sync, AI access, AI advice 
 
 ```mermaid
 sequenceDiagram
-  actor D as Dor
+  actor D as Parent A
   participant W as Next.js
   participant AU as Supabase Auth
   participant S as Service layer
   participant DB as Postgres
-  actor Y as Yarden
+  actor Y as Parent B
   D->>W: Sign in with Google
   W->>AU: OAuth sign-in
   AU-->>W: Session (JWT)
@@ -192,7 +192,7 @@ sequenceDiagram
   D->>W: Create household
   W->>S: createHousehold(name, locale)
   S->>DB: INSERT household, member(owner)
-  D->>W: Invite yarden@...
+  D->>W: Invite partner@...
   W->>S: createInvite(email)
   S->>DB: INSERT invite(token_hash, expires 7d)
   S-)Y: Email with invite link
@@ -206,12 +206,12 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-  actor Y as Yarden (PWA)
+  actor Y as Parent B (PWA)
   participant W as Server action
   participant S as Service layer
   participant DB as Postgres (RLS)
   participant RT as Realtime
-  actor D as Dor (PWA)
+  actor D as Parent A (PWA)
   Y->>W: completeTask(taskId, note)
   Note over Y: Optimistic UI, item ticked
   W->>S: completeTask(ctx, taskId, note)
@@ -222,7 +222,7 @@ sequenceDiagram
   W-->>Y: Confirmed
   DB-)RT: Change event
   RT-)D: task_instance updated
-  Note over D: Today re-renders with Yarden's avatar
+  Note over D: Today re-renders with Parent B's avatar
 ```
 
 **3. Connecting Claude over MCP, then a tool call**
@@ -576,18 +576,20 @@ The split is deliberate: `engine` and `kb` have no dependency on Next.js or Supa
 
 Every change is a branch and a PR; `main` is always deployable and deploys itself. Database changes ship as migrations in the same PR as the code that needs them.
 
-| Command              | Does                                                            |
-| -------------------- | --------------------------------------------------------------- |
-| `pnpm i`             | Install all workspaces                                          |
-| `pnpm db:start`      | Local Supabase in Docker, migrations applied, `seed.sql` loaded |
-| `pnpm dev`           | Next.js on localhost against local Supabase                     |
-| `pnpm db:new <name>` | New empty migration file                                        |
-| `pnpm db:types`      | Regenerate `packages/db/types.ts` from the schema               |
-| `pnpm test`          | Vitest (engine, services), pgTAP (RLS)                          |
-| `pnpm e2e`           | Playwright against the local app                                |
-| `pnpm kb:validate`   | zod-validate every KB YAML, check locales and sources           |
-| `pnpm docs:gen`      | Regenerate the ER diagram, KB catalog and MCP tool list         |
-| `pnpm check`         | All of the above that CI runs, in one go                        |
+| Command              | Does                                                                                                                                                                                      |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm i`             | Install all workspaces                                                                                                                                                                    |
+| `pnpm db:start`      | Local Supabase in Docker, migrations applied, `seed.sql` loaded                                                                                                                           |
+| `pnpm dev`           | Next.js on localhost against local Supabase                                                                                                                                               |
+| `pnpm db:new <name>` | New empty migration file                                                                                                                                                                  |
+| `pnpm db:types`      | Regenerate `packages/db/types.ts` from the schema                                                                                                                                         |
+| `pnpm test`          | Vitest (engine, services), pgTAP (RLS)                                                                                                                                                    |
+| `pnpm e2e`           | Playwright against the local app                                                                                                                                                          |
+| `pnpm kb:validate`   | zod-validate every KB YAML, check locales and sources                                                                                                                                     |
+| `pnpm docs:gen`      | Regenerate the ER diagram, KB catalog and MCP tool list                                                                                                                                   |
+| `pnpm check`         | All of the above that CI runs, in one go                                                                                                                                                  |
+| `pnpm check:twice`   | Runs the gate twice and compares a hash of every tracked file, so a non-idempotent generator fails here rather than on the next run                                                       |
+| `pnpm check:private` | Refuses real names, real email addresses and key material. Contains no denylist of names — it reads the clone's git identity at runtime, so no name is ever committed to enforce the rule |
 
 ```mermaid
 flowchart LR

@@ -19,7 +19,7 @@ flowchart LR
   R3 --> G3{"Gate C<br/>public-launch checks"}
 ```
 
-## Week 0 — only Dor can do these
+## Week 0 — only the account owner can do these
 
 - [ ] Confirm the current week and the ultrasound-corrected EDD, and put the next
       test window in a shared note **today**. The app is not on the critical path.
@@ -28,7 +28,7 @@ flowchart LR
       Console with a monthly spend cap (the key is first needed at step 11)
 - [ ] Install locally: Node 24 LTS, pnpm 12, Docker, the Supabase CLI and Claude Code
 - [x] Decide Next.js or SvelteKit — **Next.js** (ADR-0004)
-- [ ] Decide Yarden's role
+- [ ] Decide the second parent's role
 - [x] Re-export the shopping list as **CSV UTF-8** — done 2026-11-09. UTF-8 with
       BOM, 61 items, 9 columns, Hebrew intact. The structure is recorded in
       [`things-csv-import.md`](things-csv-import.md); the file itself is household

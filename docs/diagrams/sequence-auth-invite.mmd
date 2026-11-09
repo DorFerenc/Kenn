@@ -1,10 +1,10 @@
 sequenceDiagram
-  actor D as Dor
+  actor D as Parent A
   participant W as Next.js
   participant AU as Supabase Auth
   participant S as Service layer
   participant DB as Postgres
-  actor Y as Yarden
+  actor Y as Parent B
   D->>W: Sign in with Google
   W->>AU: OAuth sign-in
   AU-->>W: Session (JWT)
@@ -12,7 +12,7 @@ sequenceDiagram
   D->>W: Create household
   W->>S: createHousehold(name, locale)
   S->>DB: INSERT household, member(owner)
-  D->>W: Invite yarden@...
+  D->>W: Invite partner@...
   W->>S: createInvite(email)
   S->>DB: INSERT invite(token_hash, expires 7d)
   S-)Y: Email with invite link

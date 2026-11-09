@@ -15,7 +15,10 @@
 #
 set -euo pipefail
 
-REPO="${REPO:-DorFerenc/Kenn}"
+# Derived from the git remote so no account or repository name is committed.
+# Override with REPO=owner/name or --repo owner/name.
+REPO="${REPO:-$(git config --get remote.origin.url 2>/dev/null \
+  | sed -E 's#(git@|https://)github\.com[:/]##; s#\.git$##')}"
 APPROVALS=0
 RULESET_NAME="main"
 

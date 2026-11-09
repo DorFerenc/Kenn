@@ -28,7 +28,11 @@
     "db:test": "pnpm --filter @kenn/db db:test",
     "kb:validate": "pnpm --filter @kenn/kb validate",
     "docs:gen": "node scripts/docs-gen.mjs",
-    "check": "pnpm lint && pnpm typecheck && pnpm docs:gen && pnpm format:check && pnpm test && pnpm kb:validate && pnpm knip"
+    "check": "pnpm check:private && pnpm lint && pnpm typecheck && pnpm docs:gen && pnpm format:check && pnpm test && pnpm kb:validate && pnpm knip",
+    "check:private": "node scripts/check-private.mjs",
+    "check:twice": "node scripts/check-stable.mjs",
+    "hooks:install": "git rev-parse --git-dir > /dev/null 2>&1 && git config core.hooksPath .githooks || true",
+    "prepare": "pnpm hooks:install"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
