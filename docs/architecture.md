@@ -76,6 +76,20 @@ install-time build script as an explicit decision; all three currently present
 prebuilt binaries or serves only a watch mode CI never runs. GitHub Actions are
 pinned by commit SHA, never by tag.
 
+**Resolving a pin correctly.** For an _annotated_ tag, `git ls-remote --tags`
+returns the tag **object**, not the commit, and pinning that is not pinning the
+code. Dereference with `^{}`:
+
+```bash
+git ls-remote https://github.com/OWNER/REPO 'refs/tags/vX.Y.Z*'
+# refs/tags/vX.Y.Z      -> the tag object   (do NOT pin this)
+# refs/tags/vX.Y.Z^{}   -> the commit       (pin this)
+```
+
+`pnpm/action-setup` uses annotated tags and was pinned to the tag object until
+Dependabot corrected it. The other actions here use lightweight tags, where the
+two are the same.
+
 ## Deployment
 
 Three managed platforms and no servers: Vercel runs the app, Supabase holds the data, GitHub runs CI and the watcher.

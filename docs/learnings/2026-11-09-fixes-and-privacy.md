@@ -77,6 +77,31 @@ tree.** `pnpm install` had nothing to do, so it did not run `prepare`, and
 `core.hooksPath` stayed unset until it was run explicitly. Worth knowing: a fresh
 clone gets it, an existing one needs `pnpm hooks:install` once.
 
+## A supply-chain pin was wrong, and Dependabot found it
+
+Step 0 claimed "GitHub Actions are pinned by commit SHA, never by tag". For
+three of the four actions that was true. For `pnpm/action-setup` it was not:
+that repository uses **annotated** tags, and `git ls-remote --tags --refs`
+returns the tag _object_ for those, not the commit it points at. So the pin named
+a tag object, which is not the code.
+
+Dependabot bumped it to the real commit in one job. The job added later in the
+same session still carried the wrong SHA, so the two jobs pinned the same
+nominal version to two different objects — which is how the discrepancy became
+visible at all.
+
+The right incantation, now in `docs/architecture.md`:
+
+```bash
+git ls-remote https://github.com/OWNER/REPO 'refs/tags/vX.Y.Z*'
+# refs/tags/vX.Y.Z    -> tag object  (not this)
+# refs/tags/vX.Y.Z^{} -> commit      (this)
+```
+
+Worth noticing _why_ it surfaced: a Dependabot PR disagreeing with a
+hand-written pin. Keeping Dependabot on Actions is not busywork — it audits the
+pins.
+
 ## Rule candidates
 
 | Candidate                                                 | Automatable? | Status                                                      |
