@@ -44,5 +44,10 @@
     "notFoundTitle": "Page not found",
     "notFoundBody": "The link has probably changed or expired.",
     "backHome": "Back to the home page"
+  },
+  "harness": {
+    "windows": "A task's window",
+    "evidence": "Evidence level",
+    "note": "A step-2 harness. Onboarding and Today replace it at step 5."
   }
 }

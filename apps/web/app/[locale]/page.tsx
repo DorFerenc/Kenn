@@ -88,7 +88,7 @@ export default async function HomePage({
 
       <section aria-labelledby="window-heading" className="flex flex-col gap-1">
         <h2 id="window-heading" className="text-lg font-semibold">
-          {t('tasks.done')}
+          {t('harness.windows')}
         </h2>
         <ul className="flex flex-col gap-1">
           {WINDOW_STATES.map((state) => (
@@ -101,7 +101,7 @@ export default async function HomePage({
               {/* Grey before the window opens, green inside it, red after it
                   closed — see packages/ui/CLAUDE.md, "Shape". */}
               <span
-                role="presentation"
+                aria-hidden="true"
                 className={`h-1 rounded-full ${
                   {
                     before: 'bg-window-before',
@@ -117,7 +117,7 @@ export default async function HomePage({
 
       <section aria-labelledby="evidence-heading" className="flex flex-col gap-1">
         <h2 id="evidence-heading" className="text-lg font-semibold">
-          {t('evidence.strong')}
+          {t('harness.evidence')}
         </h2>
         <ul className="flex flex-wrap gap-1">
           {EVIDENCE_LEVELS.map((level) => (
@@ -138,9 +138,11 @@ export default async function HomePage({
         </ul>
       </section>
 
-      <p className="text-text-muted numeric text-sm">
-        {formatIsoDate(SAMPLE_DATE, locale)}
-      </p>
+      <footer className="text-text-muted flex flex-col gap-1 text-sm">
+        <p>{t('harness.note')}</p>
+        {/* `numeric` keeps a run of digits left-to-right inside Hebrew text. */}
+        <p className="numeric">{formatIsoDate(SAMPLE_DATE, locale)}</p>
+      </footer>
     </main>
   );
 }

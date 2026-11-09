@@ -44,5 +44,10 @@
     "notFoundTitle": "הדף לא נמצא",
     "notFoundBody": "הקישור כנראה שונה או שפג תוקפו.",
     "backHome": "{genderForm, select, feminine {חזרי לדף הבית} masculine {חזור לדף הבית} other {חזרו לדף הבית}}"
+  },
+  "harness": {
+    "windows": "חלון הזמן של משימה",
+    "evidence": "רמת הראיות",
+    "note": "דף הדגמה לשלב 2. מסכי האונבורדינג ו⁠\"היום\" מחליפים אותו בשלב 5."
   }
 }
