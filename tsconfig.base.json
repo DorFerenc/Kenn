@@ -21,6 +21,10 @@
     "noUnusedParameters": true,
     "exactOptionalPropertyTypes": true,
 
-    "noEmit": true
+    "noEmit": true,
+    // Every package is noEmit, so an explicit ".ts" in an import is safe and is
+    // what tsx and a bundler both resolve. Required by packages/kb, whose
+    // validator imports ../schema.ts.
+    "allowImportingTsExtensions": true
   }
 }

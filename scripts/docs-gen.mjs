@@ -17,13 +17,70 @@
  * "Docs that stay current".
  */
 
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { generateEr } from './gen-er.mjs';
+import { generateCatalog } from './gen-kb-catalog.mjs';
 
 const DIAGRAM_DIR = 'docs/diagrams';
 const MANIFEST = join(DIAGRAM_DIR, 'manifest.json');
 
 let failures = 0;
+
+// ------------------------------------------------------- KB catalogue
+function writeKbCatalog() {
+  const { markdown, count } = generateCatalog();
+  const target = 'docs/kb-catalog.md';
+  const before = existsSync(target) ? readFileSync(target, 'utf8') : '';
+  const changed = before !== markdown;
+  if (changed) writeFileSync(target, markdown);
+  console.log(
+    `KB catalogue: ${count} item(s)` +
+      (changed ? ' — regenerated.' : ' — already current.'),
+  );
+}
+
+// ------------------------------------------------------------- ER generation
+function writeErDiagram() {
+  if (!existsSync('packages/db/supabase/migrations')) return;
+  const sqlFiles = readdirSync('packages/db/supabase/migrations').filter((f) =>
+    f.endsWith('.sql'),
+  );
+  if (sqlFiles.length === 0) {
+    console.log('ER diagram: no migrations yet, nothing to generate.');
+    return;
+  }
+
+  const { mermaid, tableCount } = generateEr();
+  const target = 'docs/diagrams/er.mmd';
+  const before = existsSync(target) ? readFileSync(target, 'utf8') : '';
+  if (before !== mermaid) writeFileSync(target, mermaid);
+
+  // Splice it into the document between its anchors, so the rendered diagram a
+  // reader sees is the same bytes as the .mmd source.
+  const doc = 'docs/architecture.md';
+  const text = readFileSync(doc, 'utf8');
+  const open = '<!-- generated: er. Do not edit by hand; run `pnpm docs:gen`. -->';
+  const close = '<!-- /generated: er -->';
+  const i = text.indexOf(open);
+  const j = text.indexOf(close);
+  if (i === -1 || j === -1) {
+    console.error(
+      `${doc} is missing the generated-er anchors; cannot place the diagram.`,
+    );
+    failures += 1;
+    return;
+  }
+  const replacement = `${open}\n\n\`\`\`mermaid\n${mermaid}\`\`\`\n\n${close}`;
+  const updated = text.slice(0, i) + replacement + text.slice(j + close.length);
+  if (updated !== text) writeFileSync(doc, updated);
+
+  const changed = before !== mermaid || updated !== text;
+  console.log(
+    `ER diagram: ${tableCount} tables from ${sqlFiles.length} migration(s)` +
+      (changed ? ' — regenerated.' : ' — already current.'),
+  );
+}
 
 // ---------------------------------------------------------------- 1. diagrams
 function checkDiagrams() {
@@ -99,12 +156,6 @@ function filesMatching(dir, predicate) {
 
 const pendingGenerators = [
   {
-    name: 'ER diagram',
-    from: 'packages/db/supabase/migrations',
-    step: 1,
-    hasContent: (d) => filesMatching(d, (f) => f.endsWith('.sql')).length > 0,
-  },
-  {
     name: 'i18n coverage',
     from: 'apps/web/messages',
     step: 2,
@@ -113,13 +164,6 @@ const pendingGenerators = [
       filesMatching(d, (f) => f.endsWith('.json')).some(
         (f) => Object.keys(JSON.parse(readFileSync(f, 'utf8'))).length > 0,
       ),
-  },
-  {
-    name: 'KB catalog',
-    from: 'packages/kb/content',
-    step: 3,
-    hasContent: (d) =>
-      filesMatching(d, (f) => f.endsWith('.yaml') || f.endsWith('.yml')).length > 0,
   },
   {
     name: 'MCP tool list',
@@ -143,6 +187,8 @@ function reportPending() {
   }
 }
 
+writeErDiagram();
+writeKbCatalog();
 checkDiagrams();
 console.log('generators awaiting their roadmap step:');
 reportPending();

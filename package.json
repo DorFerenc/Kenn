@@ -28,13 +28,14 @@
     "db:test": "pnpm --filter @kenn/db db:test",
     "kb:validate": "pnpm --filter @kenn/kb validate",
     "docs:gen": "node scripts/docs-gen.mjs",
-    "check": "pnpm lint && pnpm typecheck && pnpm format:check && pnpm test && pnpm kb:validate && pnpm docs:gen && pnpm knip"
+    "check": "pnpm lint && pnpm typecheck && pnpm docs:gen && pnpm format:check && pnpm test && pnpm kb:validate && pnpm knip"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "eslint": "10.14.0",
     "eslint-config-prettier": "10.1.8",
     "globals": "17.14.0",
+    "js-yaml": "5.5.0",
     "knip": "6.44.1",
     "prettier": "3.9.10",
     "typescript": "6.0.3",

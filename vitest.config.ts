@@ -5,7 +5,12 @@ import { defineConfig } from 'vitest/config';
 // apps/web will need jsdom at step 5. Until then a single Node run is simpler.
 export default defineConfig({
   test: {
-    include: ['packages/*/src/**/*.test.ts', 'packages/*/scripts/**/*.test.ts'],
+    include: [
+      'packages/*/*.test.ts',
+      'packages/*/src/**/*.test.ts',
+      'packages/*/scripts/**/*.test.ts',
+      'scripts/**/*.test.mjs',
+    ],
     environment: 'node',
     passWithNoTests: true,
     reporters: ['default'],

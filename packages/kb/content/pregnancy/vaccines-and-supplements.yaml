@@ -1,0 +1,90 @@
+# Vaccines and supplements in pregnancy, Israel.
+
+items:
+  - id: preg.tdap
+    kind: schedule
+    version: 1
+    country: IL
+    phase: pregnancy
+    category: vaccine
+    locales:
+      he:
+        title: חיסון שעלת (Tdap)
+        why: בכל הריון, גם אם התחסנת בהריון קודם. הנוגדנים עוברים דרך השליה ומגנים על התינוק עד המנות שלו מגיל חודשיים.
+      en:
+        title: Whooping cough vaccine (Tdap)
+        why: Every pregnancy, even if you were vaccinated in a previous one. The antibodies cross the placenta and protect the baby until its own doses from two months.
+    window: { anchor: LMP, start_days: 189, end_days: 258 }
+    red_flag_days: 259
+    coverage: basket
+    priority: critical
+    evidence: guideline
+    sources:
+      - https://me.health.gov.il/parenting/family-planning/vaccines-during-pregnancy/vaccines-during-pregnancy/pertussis-vaccination
+    review_by: "2027-03-01"
+
+  - id: preg.flu-vaccine
+    kind: schedule
+    version: 1
+    country: IL
+    phase: pregnancy
+    category: vaccine
+    locales:
+      he:
+        title: חיסון שפעת
+        why: בכל שלב של ההריון, בעונת השפעת. מגן גם על האם וגם על היילוד.
+      en:
+        title: Flu vaccine
+        why: At any stage of pregnancy, in season. Protects both the mother and the newborn.
+    window: { anchor: LMP, start_days: 0, end_days: 280 }
+    coverage: free
+    priority: important
+    sources:
+      - http://midaat.org.il/vaccination/pregnancy/
+    review_by: "2027-03-01"
+
+  - id: preg.folic-acid
+    kind: schedule
+    version: 1
+    country: IL
+    phase: pregnancy
+    category: supplement
+    locales:
+      he:
+        title: חומצה פולית 400 מק"ג ביום
+        why: מונעת מומים בתעלה העצבית. להתחיל לפחות שלושה חודשים לפני ההריון ולהמשיך לאורכו.
+      en:
+        title: Folic acid, 400 mcg a day
+        why: Prevents neural tube defects. Start at least three months before conception and continue through the pregnancy.
+    window: { anchor: LMP, start_days: -90, end_days: 280 }
+    coverage: otc
+    priority: critical
+    sources:
+      - http://midaat.org.il/articles/health-and-sickness/pregnancy-follow-up/
+    review_by: "2027-03-01"
+
+  - id: preg.rsv-maternal-vaccine
+    kind: schedule
+    version: 1
+    country: IL
+    phase: pregnancy
+    category: vaccine
+    status: draft
+    locales:
+      he:
+        title: חיסון RSV לאם (Abrysvo)
+        why: בישראל ההגנה ניתנת בעיקר לתינוק עצמו (Beyfortus). לדון עם הרופא/ה.
+      en:
+        title: Maternal RSV vaccine (Abrysvo)
+        why: Israel mainly protects the baby directly with Beyfortus. Discuss with your doctor.
+    window: { anchor: LMP, start_days: 224, end_days: 258 }
+    coverage: private
+    priority: optional
+    evidence: moderate
+    sources:
+      - https://www.wikirefua.org.il/w/index.php?title=%D7%AA%D7%93%D7%A8%D7%99%D7%9A_%D7%97%D7%99%D7%A1%D7%95%D7%A0%D7%99%D7%9D_-_%D7%AA%D7%A8%D7%9B%D7%99%D7%91%D7%99%D7%9D_%D7%A0%D7%92%D7%93_%D7%A0%D7%92%D7%99%D7%A3_%D7%A0%D7%A9%D7%99%D7%9E%D7%AA%D7%99_%D7%A1%D7%99%D7%A0%D7%A6%D7%99%D7%90%D7%9C%D7%99
+    review_by: "2026-12-01"
+    notes: >-
+      DRAFT. The 32+0 to 36+6 window is US practice, and Israeli policy differs:
+      the baby usually receives Beyfortus instead. Needs an Israeli MoH source
+      and a clinical reviewer before it publishes.

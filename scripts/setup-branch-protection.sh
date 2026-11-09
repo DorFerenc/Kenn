@@ -59,6 +59,7 @@ payload=$(cat <<JSON
         "do_not_enforce_on_create": false,
         "required_status_checks": [
           { "context": "Typecheck, lint and test" },
+          { "context": "Migrations and RLS" },
           { "context": "Gov watcher (Python)" }
         ]
       } }
@@ -100,7 +101,8 @@ Run this script from your own machine, once:
 
 Or set the same rules by hand in Settings, Rules, Rulesets: require a pull
 request with 0 required approvals, require the status checks "Typecheck, lint and
-test" and "Gov watcher (Python)", block force pushes and deletion, and require
+test", "Migrations and RLS" and "Gov watcher (Python)", block force pushes and
+deletion, and require
 conversation resolution.
 HINT
       ;;

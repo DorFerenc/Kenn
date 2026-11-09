@@ -1,0 +1,224 @@
+# Pregnancy tests and screens, Israel.
+#
+# Windows are day offsets from LMP. Gestational age is counted from the last
+# menstrual period and corrected by the first ultrasound, so "week 36+0" is day
+# 252 and "37+6" is day 265.
+#
+# Every item cites a source. Where the authority is the Ministry of Health the
+# MoH page is cited directly; where the blueprint's source is a health fund,
+# hospital or NGO page summarising a guideline, that is cited and the item
+# carries a nearer review_by.
+
+items:
+  - id: preg.carrier-screening
+    kind: schedule
+    version: 1
+    country: IL
+    phase: pregnancy
+    category: test
+    locales:
+      he:
+        title: סקר גנטי מורחב
+        why: פאנל אחיד לכל הזוגות, חינם, פעם אחת. האישה נבדקת תחילה, והפרטנר רק אם היא נשאית.
+      en:
+        title: Expanded genetic carrier screening
+        why: One uniform panel for everyone, free, once per couple. The woman is tested first, her partner only if she is a carrier.
+    window: { anchor: LMP, start_days: -180, end_days: 97 }
+    applies_if: {}
+    coverage: basket
+    priority: critical
+    evidence: guideline
+    sources:
+      - https://me.health.gov.il/parenting/family-planning/pregnancy-testing-and-monitoring/pregnancy-tests-eligibility/prepregnancy-genetic-screening/
+      - https://www.gov.il/he/service/genetic-survey-before-or-during-pregnancy
+    valid_from: "2024-11-15"
+    review_by: "2027-06-01"
+    notes: >-
+      The uniform panel replaced the ethnic-origin model on 15 November 2024.
+      People screened under the old model are advised to re-test.
+
+  - id: preg.first-ultrasound
+    kind: schedule
+    version: 1
+    country: IL
+    phase: pregnancy
+    category: test
+    locales:
+      he:
+        title: אולטרסאונד ראשון — דופק וקביעת גיל ההריון
+        why: מאמת שההריון ברחם, קובע את מספר העוברים ומתקן את תאריך הלידה המשוער.
+      en:
+        title: First ultrasound — heartbeat and dating
+        why: Confirms the pregnancy is in the uterus, counts the fetuses, and corrects the estimated due date.
+    window: { anchor: LMP, start_days: 42, end_days: 90 }
+    coverage: basket
+    priority: critical
+    sources:
+      - https://www.leumit.co.il/pregnancy/during-your-pregnancy/the-tests-are-recommended-during-pregnancy/
+    review_by: "2027-03-01"
+
+  - id: preg.first-blood-panel
+    kind: schedule
+    version: 1
+    country: IL
+    phase: pregnancy
+    category: test
+    locales:
+      he:
+        title: בדיקות דם ושתן ראשונות
+        why: ספירת דם, סוג דם וקומבס עקיף, גלוקוז בצום, HBsAg, HCV, HIV, VDRL ותרבית שתן.
+      en:
+        title: First blood and urine panel
+        why: Blood count, blood type with indirect Coombs, fasting glucose, HBsAg, HCV, HIV, VDRL and a urine culture.
+    window: { anchor: LMP, start_days: 42, end_days: 76 }
+    coverage: basket
+    priority: critical
+    sources:
+      - https://www.machonorly.com/%D7%9C%D7%95%D7%97-%D7%96%D7%9E%D7%A0%D7%99%D7%9D-%D7%9C%D7%9E%D7%A2%D7%A7%D7%91-%D7%94%D7%A8%D7%99%D7%95%D7%9F-%D7%95%D7%94%D7%A0%D7%97%D7%99%D7%95%D7%AA-%D7%9B%D7%9C%D7%9C%D7%99%D7%95%D7%AA.html
+    review_by: "2027-03-01"
+
+  - id: preg.nt-scan
+    kind: schedule
+    version: 1
+    country: IL
+    phase: pregnancy
+    category: test
+    locales:
+      he:
+        title: שקיפות עורפית וסקר ביוכימי ראשון
+        why: החלון נוקשה — 11+0 עד 13+6. אחרי כן לא ניתן לבצע את הבדיקה.
+      en:
+        title: Nuchal translucency and first-trimester biochemical screen
+        why: The window is strict — 11+0 to 13+6. After that the scan cannot be done.
+    window: { anchor: LMP, start_days: 77, end_days: 97 }
+    red_flag_days: 98
+    coverage: basket
+    priority: critical
+    sources:
+      - https://he.hadassah.org.il/women-club/tests-during-pregnancy/
+    review_by: "2027-03-01"
+    notes: Basket with a copay. Detects up to about 70% of Down syndrome cases.
+
+  - id: preg.early-anatomy-scan
+    kind: schedule
+    version: 1
+    country: IL
+    phase: pregnancy
+    category: test
+    locales:
+      he:
+        title: סקירת מערכות מוקדמת
+        why: מומלצת על ידי משרד הבריאות אך אינה בסל. ביטוח משלים לרוב מסבסד.
+      en:
+        title: Early anatomy scan
+        why: Recommended by the Ministry of Health but not funded by the basket. Supplementary insurance usually subsidises it.
+    window: { anchor: LMP, start_days: 91, end_days: 125 }
+    coverage: supplementary
+    priority: important
+    sources:
+      - https://puah.org.il/%D7%9E%D7%A2%D7%A7%D7%91-%D7%94%D7%A8%D7%99%D7%95%D7%9F-%D7%95%D7%91%D7%93%D7%99%D7%A7%D7%95%D7%AA-%D7%91%D7%94%D7%A8%D7%99%D7%95%D7%9F/
+    review_by: "2027-03-01"
+
+  - id: preg.late-anatomy-scan
+    kind: schedule
+    version: 1
+    country: IL
+    phase: pregnancy
+    category: test
+    locales:
+      he:
+        title: סקירת מערכות מאוחרת
+        why: הסקירה המבנית העיקרית. הבסיסית בסל; מורחבת — פרטי או משלים.
+      en:
+        title: Late anatomy scan
+        why: The main structural scan. The basic one is in the basket; the expanded version is private or supplementary.
+    window: { anchor: LMP, start_days: 133, end_days: 181 }
+    red_flag_days: 182
+    coverage: basket
+    priority: critical
+    sources:
+      - http://midaat.org.il/articles/health-and-sickness/pregnancy-follow-up/
+    review_by: "2027-03-01"
+
+  - id: preg.fetal-echo
+    kind: schedule
+    version: 1
+    country: IL
+    phase: pregnancy
+    category: test
+    locales:
+      he:
+        title: אקו לב עובר
+        why: מבוצע על ידי קרדיולוג ילדים.
+      en:
+        title: Fetal echocardiogram
+        why: Performed by a pediatric cardiologist.
+    window: { anchor: LMP, start_days: 140, end_days: 174 }
+    coverage: basket
+    priority: important
+    sources:
+      - https://www.israelibaby.co.il/pregnancy-tests-by-weeks
+    review_by: "2027-03-01"
+
+  - id: preg.glucose-challenge
+    kind: schedule
+    version: 1
+    country: IL
+    phase: pregnancy
+    category: test
+    locales:
+      he:
+        title: העמסת סוכר 50 גרם
+        why: מעל 140 מ"ג/ד"ל — ממשיכים להעמסת 100 גרם.
+      en:
+        title: 50g glucose challenge
+        why: Above 140 mg/dl, the 100g test follows.
+    window: { anchor: LMP, start_days: 168, end_days: 202 }
+    red_flag_days: 203
+    coverage: basket
+    priority: critical
+    sources:
+      - http://midaat.org.il/articles/health-and-sickness/pregnancy-follow-up/
+    review_by: "2027-03-01"
+
+  - id: preg.gbs-swab
+    kind: schedule
+    version: 1
+    country: IL
+    phase: pregnancy
+    category: test
+    locales:
+      he:
+        title: בדיקת GBS (משטח נרתיקי ופי הטבעת)
+        why: סקר אוניברסלי מדצמבר 2023. תוצאה חיובית — אנטיביוטיקה תוך-ורידית בלידה.
+      en:
+        title: GBS swab (vaginal and rectal)
+        why: Universal screening since December 2023. A positive result means IV antibiotics during labour.
+    window: { anchor: LMP, start_days: 252, end_days: 265 }
+    red_flag_days: 266
+    coverage: basket
+    priority: critical
+    sources:
+      - https://me.health.gov.il/parenting/family-planning/healthy-pregnancy/risks-complications/gbs/
+    valid_from: "2023-12-01"
+    review_by: "2027-03-01"
+
+  - id: preg.pre-delivery-cbc
+    kind: schedule
+    version: 1
+    country: IL
+    phase: pregnancy
+    category: test
+    locales:
+      he:
+        title: ספירת דם לפני לידה
+        why: ספירת טסיות נדרשת לאפידורל.
+      en:
+        title: Pre-delivery blood count
+        why: The platelet count is needed before an epidural.
+    window: { anchor: LMP, start_days: 245, end_days: 272 }
+    coverage: basket
+    priority: important
+    sources:
+      - https://midwives.org.il/%D7%91%D7%93%D7%99%D7%A7%D7%95%D7%AA-%D7%94%D7%99%D7%A8%D7%99%D7%95%D7%9F/
+    review_by: "2027-03-01"
