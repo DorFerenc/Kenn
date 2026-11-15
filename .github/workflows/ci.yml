@@ -137,6 +137,62 @@ jobs:
         working-directory: packages/db
         run: pnpm exec supabase stop --workdir . --no-backup || true
 
+  e2e:
+    name: End to end (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        # Only the browser the suite uses. `--with-deps` installs the system
+        # libraries headless Chromium needs on a bare runner.
+        run: pnpm --filter @kenn/web exec playwright install --with-deps chromium
+
+      - name: Start the local Supabase stack
+        # Realtime is NOT excluded here, unlike the database job: the whole
+        # point of one of these tests is that a change on one screen reaches
+        # another without a reload, and a suite running against a stack with no
+        # realtime service would pass by not testing it.
+        working-directory: packages/db
+        run: >-
+          pnpm exec supabase start --workdir .
+          -x studio,imgproxy,edge-runtime,logflare,vector
+
+      - name: Point the app at the local stack
+        # Writes apps/web/.env.local from `supabase status`. The local keys are
+        # well-known demo values and still never enter git, so they are read at
+        # run time rather than committed.
+        run: pnpm dev:env
+
+      - name: End-to-end tests
+        # The config builds the app and serves it; see playwright.config.ts for
+        # why this is a production build and not `next dev`.
+        run: pnpm e2e
+
+      # No report artefact: every action in this file is pinned by commit SHA
+      # rather than by tag, and a SHA nobody has verified is worse than no
+      # artefact. The list reporter prints each failure into the job log, and
+      # `pnpm e2e:report` opens the full report locally.
+
+      - name: Stop the stack
+        if: always()
+        working-directory: packages/db
+        run: pnpm exec supabase stop --workdir . --no-backup || true
+
   watcher:
     name: Gov watcher (Python)
     runs-on: ubuntu-latest

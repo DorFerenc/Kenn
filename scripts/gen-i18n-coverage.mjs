@@ -196,17 +196,55 @@ function readCatalogues(dir, problems = []) {
 }
 
 /**
- * Every message key named by a `t('...')` call in the app, with the namespace
- * its translator was created with.
+ * The translator variables one file binds, as `name -> key prefix`.
+ *
+ * Covers the three shapes next-intl offers and Kenn uses:
+ *
+ *   const t = useTranslations('today')                    -> today.
+ *   const t = await getTranslations()                     -> (none)
+ *   const t = await getTranslations({ locale, namespace: 'app' })  -> app.
+ */
+export function translatorBindings(text) {
+  const bindings = new Map();
+
+  // useTranslations('ns') / getTranslations('ns') / either with no argument.
+  const direct =
+    /(?:const|let|var)\s+(\w+)\s*=\s*(?:await\s+)?(?:use|get)[A-Za-z]*Translations\(\s*(?:'([^']*)')?\s*\)/g;
+  for (const m of text.matchAll(direct)) {
+    bindings.set(m[1], m[2] ? `${m[2]}.` : '');
+  }
+
+  // getTranslations({ locale, namespace: 'ns' })
+  const withOptions =
+    /(?:const|let|var)\s+(\w+)\s*=\s*(?:await\s+)?(?:use|get)[A-Za-z]*Translations\(\s*\{[^}]*namespace:\s*'([^']+)'[^}]*\}\s*\)/g;
+  for (const m of text.matchAll(withOptions)) {
+    bindings.set(m[1], `${m[2]}.`);
+  }
+
+  return bindings;
+}
+
+/**
+ * Every message key named by a translator call in the app, with the namespace
+ * that translator was created with.
  *
  * This is the half of hard rule 4 the catalogues cannot check. next-intl's
  * default fallback renders the key path, so `t('app.nmae')` ships the literal
  * string `app.nmae` to a parent's screen with both catalogues perfectly in
  * sync and the gate green.
  *
- * Deliberately conservative: a file using more than one namespace is skipped
- * rather than guessed at, and a template-literal key cannot be resolved
- * statically, so its prefix is recorded as dynamic and never reported.
+ * Keys are resolved **per binding**: `const t = useTranslations('today')` and
+ * `const common = useTranslations('common')` in one file are two namespaces,
+ * and each call site is read against the one it was bound to. The earlier
+ * version matched only `useTranslations` and skipped any file holding more than
+ * one namespace — which silently excused `getTranslations('household')`,
+ * server-side and the more common of the two, and excused the onboarding wizard
+ * entirely for reaching three namespaces. A scan that quietly covers less than
+ * it claims is the failure mode this generator exists to prevent, so it now
+ * follows the bindings.
+ *
+ * A template-literal key cannot be resolved statically, so its prefix is
+ * recorded as dynamic and never reported as unused.
  */
 export function usedKeys(roots = ['apps/web/app', 'apps/web/lib']) {
   const literal = [];
@@ -224,19 +262,16 @@ export function usedKeys(roots = ['apps/web/app', 'apps/web/lib']) {
       if (!/\.tsx?$/.test(entry.name)) continue;
 
       const text = readFileSync(full, 'utf8');
-      const namespaces = [
-        ...[...text.matchAll(/use[A-Za-z]*Translations\(\s*'([^']+)'/g)].map((m) => m[1]),
-        ...[...text.matchAll(/namespace:\s*'([^']+)'/g)].map((m) => m[1]),
-      ];
-      const unique = [...new Set(namespaces)];
-      if (unique.length > 1) continue; // ambiguous; do not guess
-      const prefix = unique[0] ? `${unique[0]}.` : '';
 
-      for (const m of text.matchAll(/\bt\(\s*'([A-Za-z][\w.]*)'/g)) {
-        literal.push({ file: full, key: `${prefix}${m[1]}` });
-      }
-      for (const m of text.matchAll(/\bt\(\s*`([A-Za-z][\w.]*)\$\{/g)) {
-        dynamicPrefixes.add(`${prefix}${m[1]}`);
+      for (const [name, prefix] of translatorBindings(text)) {
+        const literalCall = new RegExp(`\\b${name}\\(\\s*'([A-Za-z][\\w.]*)'`, 'g');
+        for (const m of text.matchAll(literalCall)) {
+          literal.push({ file: full, key: `${prefix}${m[1]}` });
+        }
+        const dynamicCall = new RegExp(`\\b${name}\\(\\s*\`([A-Za-z][\\w.]*)\\$\\{`, 'g');
+        for (const m of text.matchAll(dynamicCall)) {
+          dynamicPrefixes.add(`${prefix}${m[1]}`);
+        }
       }
     }
   };
