@@ -23,7 +23,27 @@ export type Database = {
           }
         },"public": {
           Tables: {
-            "household": {
+            "audit_log": {
+                  Row: {
+                    "action": string,"actor_kind": string,"actor_name": string | null,"actor_user_id": string | null,"after": Json | null,"before": Json | null,"created_at": string,"entity": string,"entity_id": string | null,"household_id": string,"id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "action": string,"actor_kind": string,"actor_name"?: string | null,"actor_user_id"?: string | null,"after"?: Json | null,"before"?: Json | null,"created_at"?: string,"entity": string,"entity_id"?: string | null,"household_id": string,"id"?: string
+                  }
+                  Update: {
+                    "action"?: string,"actor_kind"?: string,"actor_name"?: string | null,"actor_user_id"?: string | null,"after"?: Json | null,"before"?: Json | null,"created_at"?: string,"entity"?: string,"entity_id"?: string | null,"household_id"?: string,"id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "audit_log_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: false
+      referencedRelation: "household"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"household": {
                   Row: {
                     "country": string,"created_at": string,"default_locale": string,"id": string,"name": string
                   }
@@ -36,6 +56,26 @@ export type Database = {
                   }
                   Relationships: [
                     
+                  ]
+                },"household_profile": {
+                  Row: {
+                    "created_at": string,"customs": string | null,"feeding_intent": string | null,"firstborn": boolean | null,"has_supplementary": boolean | null,"health_fund": string | null,"household_id": string,"rh_negative": boolean | null,"sex": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"customs"?: string | null,"feeding_intent"?: string | null,"firstborn"?: boolean | null,"has_supplementary"?: boolean | null,"health_fund"?: string | null,"household_id": string,"rh_negative"?: boolean | null,"sex"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"customs"?: string | null,"feeding_intent"?: string | null,"firstborn"?: boolean | null,"has_supplementary"?: boolean | null,"health_fund"?: string | null,"household_id"?: string,"rh_negative"?: boolean | null,"sex"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "household_profile_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: true
+      referencedRelation: "household"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"invite": {
                   Row: {
@@ -71,6 +111,46 @@ isOneToOne: false
                   Relationships: [
                     {
       foreignKeyName: "member_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: false
+      referencedRelation: "household"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"pregnancy": {
+                  Row: {
+                    "created_at": string,"dating_method": string,"edd": string | null,"fetuses": number,"household_id": string,"lmp": string | null,"transfer_date": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"dating_method": string,"edd"?: string | null,"fetuses"?: number,"household_id": string,"lmp"?: string | null,"transfer_date"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"dating_method"?: string,"edd"?: string | null,"fetuses"?: number,"household_id"?: string,"lmp"?: string | null,"transfer_date"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "pregnancy_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: true
+      referencedRelation: "household"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"task_state": {
+                  Row: {
+                    "acted_at": string,"acted_by": string,"household_id": string,"kb_item_id": string,"kb_version": number,"note": string | null,"state": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "acted_at"?: string,"acted_by": string,"household_id": string,"kb_item_id": string,"kb_version": number,"note"?: string | null,"state": string
+                  }
+                  Update: {
+                    "acted_at"?: string,"acted_by"?: string,"household_id"?: string,"kb_item_id"?: string,"kb_version"?: number,"note"?: string | null,"state"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "task_state_household_id_fkey"
       columns: ["household_id"]
 isOneToOne: false
       referencedRelation: "household"

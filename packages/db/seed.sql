@@ -28,3 +28,20 @@ values
   ('00000000-0000-4000-8000-0000000d0001', '00000000-0000-4000-8000-00000000da02',
    'owner', 'en', 'masculine')
 on conflict (household_id, user_id) do nothing;
+
+-- A pregnancy for the fake household, so `pnpm dev` has a Today screen without
+-- anyone having to run the wizard first.
+--
+-- The LMP is a PLACEHOLDER and deliberately a round, obviously-invented date.
+-- The real anchor — the ultrasound-corrected EDD — is household health data and
+-- is collected by onboarding, never committed here. Because the date is fixed
+-- while today is not, the gestational age this produces drifts: that is fine for
+-- browsing and is why the Playwright suite onboards its own household with an
+-- LMP computed from the day the test runs, rather than asserting against this.
+insert into pregnancy (household_id, dating_method, lmp, edd, fetuses)
+values ('00000000-0000-4000-8000-0000000d0001', 'lmp', '2026-06-01', '2027-03-08', 1)
+on conflict (household_id) do nothing;
+
+insert into household_profile (household_id, firstborn, customs, health_fund, has_supplementary)
+values ('00000000-0000-4000-8000-0000000d0001', true, 'jewish', 'clalit', true)
+on conflict (household_id) do nothing;

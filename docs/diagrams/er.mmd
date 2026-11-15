@@ -3,12 +3,43 @@ erDiagram
   AUTH_USERS ||--|{ MEMBER : has
   HOUSEHOLD ||--|{ INVITE : has
   AUTH_USERS ||--|{ INVITE : has
+  HOUSEHOLD ||--o{ PREGNANCY : has
+  HOUSEHOLD ||--o{ HOUSEHOLD_PROFILE : has
+  HOUSEHOLD ||--|{ TASK_STATE : has
+  AUTH_USERS ||--|{ TASK_STATE : has
+  HOUSEHOLD ||--|{ AUDIT_LOG : has
+  AUTH_USERS ||--o{ AUDIT_LOG : has
+  AUDIT_LOG {
+    uuid id PK
+    uuid household_id FK
+    text actor_kind
+    uuid actor_user_id FK
+    text actor_name
+    text action
+    text entity
+    text entity_id
+    jsonb before
+    jsonb after
+    timestamptz created_at
+  }
   HOUSEHOLD {
     uuid id PK
     text name
     text country
     text default_locale
     timestamptz created_at
+  }
+  HOUSEHOLD_PROFILE {
+    uuid household_id PK,FK
+    boolean firstborn
+    text customs
+    text health_fund
+    boolean has_supplementary
+    boolean rh_negative
+    text sex
+    text feeding_intent
+    timestamptz created_at
+    timestamptz updated_at
   }
   INVITE {
     uuid id PK
@@ -29,6 +60,25 @@ erDiagram
     text locale
     text gender_form
     timestamptz created_at
+  }
+  PREGNANCY {
+    uuid household_id PK,FK
+    text dating_method
+    date lmp
+    date edd
+    date transfer_date
+    int fetuses
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  TASK_STATE {
+    uuid household_id PK,FK
+    text kb_item_id PK
+    int kb_version
+    text state
+    uuid acted_by FK
+    timestamptz acted_at
+    text note
   }
   AUTH_USERS {
     uuid id PK
