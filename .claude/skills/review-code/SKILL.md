@@ -71,7 +71,13 @@ confirmation dialog where undo belongs; contrast failing in dark mode.
 
 **Tests** — new behaviour untested; a test asserting the middle of a window
 instead of its boundaries; a test that would still pass with the feature deleted;
-an engine change never run under a non-UTC timezone.
+an engine change never run under a non-UTC timezone; **a gate whose violation was
+only ever planted by hand** — the planting belongs in the test, or the gate dies
+with the terminal session that verified it; **a scan that covers less than it
+claims** — ask what it cannot see, not what it rejects (a glob that matches no
+file, a pattern that misses the common spelling, a file kind skipped); **a
+fixture that continues after its own precondition failed**, which turns one clear
+failure into a confusing one three locators later.
 
 **Hygiene** — dead code knip would catch; an unused dependency; a stray
 `console.log`; a TODO with no issue.

@@ -35,6 +35,15 @@ fi
 # which is the opposite of "one commit that says step 5 is not reviewable".
 before=$(git diff)
 
+# What this commit is about, printed before the gate runs.
+#
+# Twice now a commit has carried work it was not about: once from `git add -A`,
+# once from an index still loaded by a commit the hook had refused. Neither is
+# something a hook should guess at and block, but both are obvious the moment
+# the paths are on screen — so they go on screen.
+printf 'pre-commit: staged for this commit:\n' >&2
+git diff --cached --name-only | sed 's/^/  /' >&2
+
 printf 'pre-commit: running pnpm check (SKIP_CHECK=1 to bypass)\n' >&2
 if ! out=$(pnpm check 2>&1); then
   printf '%s\n' "$out" >&2

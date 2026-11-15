@@ -158,4 +158,15 @@ Every build session:
      only after it has happened twice; prefer a lint rule, a test or a hook over a
      sentence here. Hard rules above are never relaxed by a retro, only by an ADR. -->
 
-_None yet. Step 0 was the first session._
+1. **Ask what a gate cannot see, not only what it rejects.** Second occurrence
+   (step 2's colour scan, step 5a's i18n key scan, which matched
+   `useTranslations` and silently skipped every `getTranslations` file). A scan
+   that covers less than it claims reports itself clean, which is worse than no
+   scan. Promoted into `/review-code`.
+   [`learnings/2026-11-15-step-5a-service-layer-and-screens.md`](learnings/2026-11-15-step-5a-service-layer-and-screens.md)
+2. **The index carries state from before this commit.** Second occurrence (step
+   2 was `git add -A`; step 5a inherited a `git add` from a commit the hook had
+   refused, and a one-file `chore:` commit took fourteen files of schema with
+   it). `.githooks/pre-commit` now prints the staged paths before it runs the
+   gate, so the mix is visible while there is still time to fix it.
+   [`learnings/2026-11-15-step-5a-service-layer-and-screens.md`](learnings/2026-11-15-step-5a-service-layer-and-screens.md)
