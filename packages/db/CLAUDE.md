@@ -19,9 +19,9 @@ language sql stable security definer set search_path = public as $$
   );
 $$;
 
-alter table task_instance enable row level security;
+alter table task_state enable row level security;
 
-create policy task_rw on task_instance
+create policy task_state_rw on task_state
   for all
   using (is_member(household_id))
   with check (is_member(household_id));
@@ -30,6 +30,15 @@ create policy task_rw on task_instance
 The test signs in as a member of household A and asserts **zero rows** from
 household B, for select, insert, update **and** delete. A new table without that
 test fails CI. Use the `write-migration` skill; it does all four in order.
+
+**One table departs from the pattern, and only one:** `audit_log` is
+append-only — a select policy and an insert policy, no update or delete policy,
+so both default-deny. An audit log its own subject can edit is not an audit log.
+The reasoning is in
+[ADR-0008](../../docs/adr/0008-derive-windows-store-only-decisions.md); a second
+table claiming the same exemption needs its own ADR. Note that an `UPDATE` with
+no matching policy reports zero rows rather than raising, so the refusal has to
+be asserted or it is invisible.
 
 ## Migrations
 
