@@ -72,21 +72,53 @@ flowchart LR
       engine tests green under `TZ=America/Los_Angeles`; ISO date strings and UTC
       only, no `Date` with a time anywhere in the package.)_
 
-- [ ] **5.** Onboarding wizard, Today and Checklist, realtime sync, production
-      deploy, PWA on both phones. Playwright arrives here; `eslint-config-next`
-      too. Replaces the step-2 harness at `app/[locale]/page.tsx`, and reads
-      `member.locale` and `member.gender_form` through the service layer instead
-      of defaulting to Hebrew and the neutral plural. Takes `@supabase/supabase-js`,
-      `zod` and the workspace packages off `knip.json`'s `ignoreDependencies`.
+- [x] **5a.** The app against local Supabase: the service layer, the first
+      screens, realtime sync and the end-to-end suite. _(2026-11-15 — four
+      tables with RLS and a pgTAP file each — `pregnancy`, `household_profile`,
+      `task_state`, `audit_log` — taking 30 assertions to 76; thirteen modules
+      in `apps/web/lib/services` as the only database callers, with
+      `@supabase/ssr` added to the lint boundary beside `@supabase/supabase-js`;
+      `lib/today.ts` as the app's only clock, held there by a test that scans
+      for any other `Date`; `pnpm kb:build` compiling the YAML into
+      `packages/kb/generated/items.json`, because a bundler cannot follow a
+      `readdirSync`; sign-in and sign-up, a four-step onboarding wizard, Today,
+      the Checklist, the household page with its invite link and the join page,
+      replacing the step-2 harness and reading `member.locale` and
+      `member.gender_form` through the service layer; a `task_state`
+      subscription that calls `router.refresh()`, so the other parent's screen
+      re-reads through the service layer rather than trusting the payload; 21
+      Playwright tests, `eslint-config-next`, and a CI job that runs the suite
+      with the realtime service switched on; and `pnpm check:prerender`, which
+      fails if a household route reaches the prerender manifest. The design
+      decision is what is **not** there: no `task_instance` table, because a
+      window is day offsets from an anchor and the engine derives it at read
+      time ([ADR-0008](../adr/0008-derive-windows-store-only-decisions.md)).
+      Only the two Serwist entries remain in `knip.json`'s
+      `ignoreDependencies`. `docs/learnings/2026-11-15-step-5a-service-layer-and-screens.md`)_
+
+- [ ] **5b.** Production: Google OAuth, real MFA enrolment, `deploy.yml`, the
+      first production deploy, and the PWA installed from production on both
+      phones. Carries one open decision: **whether email + password survives
+      into production.** It is what step 5a signs in with and what the
+      Playwright suite needs; Google OAuth may replace it or sit beside it.
+      Hosted auth rate limits belong here too, in a `[remotes.production]`
+      block — step 5a raised only the local `sign_in_sign_ups`, and the default
+      30 per five minutes is the right order of magnitude for two real people.
+      Needs the hosted Supabase project and the Vercel account, so it shares its
+      blockers with step 1. **Gate A's "both phones have the PWA installed from
+      production" cannot be ticked until this lands.**
 - [ ] **6.** Reminders: Web Push, the Sunday digest and the ICS calendar feed.
       **Risk:** Serwist integrates through a webpack plugin and Next.js 16 fails
       the build on a custom webpack config. Verify early.
 - [ ] **7.** Safety center v1: offline emergency card, red-flag cards, safe-sleep
       and shelter checklists, car automation guide.
 - [ ] **8a.** Things, the mechanism: `kind: thing` in the KB schema with the
-      safety-veto refinement, the profile hints as a migration with RLS and its
-      pgTAP test, catalogue filtering in `packages/engine`, the picker UI and the
-      budget view. Design: [`recommended-lists.md`](recommended-lists.md).
+      safety-veto refinement, the Things hints (baby room, car, lift, budget) as
+      new columns on `household_profile` rather than a table of their own —
+      step 5a created it with its RLS policy and pgTAP file, so 8a adds columns
+      and the assertions that cover them — catalogue filtering in
+      `packages/engine`, the picker UI and the budget view. Design:
+      [`recommended-lists.md`](recommended-lists.md).
 - [ ] **8b.** Things, the content: seed the catalogue from the four real lists —
       **safety overrides first** — then the CSV importer per
       [`things-csv-import.md`](things-csv-import.md), then the gift registry.

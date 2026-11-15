@@ -1,5 +1,5 @@
 stateDiagram-v2
-  [*] --> Upcoming : materialized
+  [*] --> Upcoming : derived at read time
   Upcoming --> Open : window start reached
   Open --> Closing : 3 days before end
   Closing --> Overdue : end passed
@@ -7,11 +7,11 @@ stateDiagram-v2
   Open --> Done : completed
   Closing --> Done : completed
   Overdue --> Done : completed late
-  Done --> Open : reopened
   Upcoming --> Skipped : not applicable
   Open --> Skipped : not applicable
-  Upcoming --> Superseded : new KB version
-  Open --> Superseded : new KB version
-  Superseded --> [*]
+  Closing --> Skipped : not applicable
+  Overdue --> Skipped : not applicable
+  Done --> Open : put back, the window decides
+  Skipped --> Open : put back, the window decides
   Done --> [*]
   Skipped --> [*]

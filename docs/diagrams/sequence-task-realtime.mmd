@@ -5,14 +5,14 @@ sequenceDiagram
   participant DB as Postgres (RLS)
   participant RT as Realtime
   actor D as Parent A (PWA)
-  Y->>W: completeTask(taskId, note)
+  Y->>W: decideTaskAction(kbItemId, done)
   Note over Y: Optimistic UI, item ticked
-  W->>S: completeTask(ctx, taskId, note)
-  S->>DB: UPDATE task_instance (user JWT)
-  DB-->>S: Row returned, RLS passed
+  W->>S: decideTask(ctx, householdId, kbItemId, done)
+  S->>DB: UPSERT task_state (user JWT)
+  DB-->>S: RLS passed, no window dates stored
   S->>DB: INSERT audit_log
-  S-->>W: TaskInstance
-  W-->>Y: Confirmed
-  DB-)RT: Change event
-  RT-)D: task_instance updated
-  Note over D: Today re-renders with Parent B's avatar
+  S-->>W: Decision recorded
+  W-->>Y: revalidatePath, both screens re-read
+  DB-)RT: task_state change event
+  RT-)D: Notification, payload not trusted
+  Note over D: router.refresh, re-read and re-materialized by the service layer

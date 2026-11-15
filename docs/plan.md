@@ -162,21 +162,22 @@ rules: []
 
 **Household tables (every row carries `household_id`, every table has RLS):**
 
-| Table                            | Holds                                                                                                                           |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `household`, `member`            | You two, roles, notification settings                                                                                           |
-| `pregnancy` / `child`            | LMP, ultrasound-corrected EDD, birth date, gestational age at birth (for corrected age), sex, birth type (affects pidyon haben) |
-| `task_instance`                  | KB item + version, computed window, status, assignee, `done_by`, `done_at`, note                                                |
-| `milestone_obs`                  | Milestone, observed date, observer                                                                                              |
-| `measurement`                    | Weight, length, head circumference, date                                                                                        |
-| `inventory_item`                 | See Things                                                                                                                      |
-| `document`                       | Storage path, type, linked task                                                                                                 |
-| `coach_session`, `coach_message` | Summary, decisions, transcript                                                                                                  |
-| `share_grant`                    | Grantee or hashed token, scopes, expiry, revoked                                                                                |
-| `mcp_client`                     | OAuth client, scopes, last used, revoked                                                                                        |
-| `audit_log`                      | Who (user or MCP client), what, before/after, when                                                                              |
+| Table                            | Holds                                                                                                                                                         |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `household`, `member`            | You two, roles, notification settings                                                                                                                         |
+| `pregnancy` / `child`            | LMP, ultrasound-corrected EDD, birth date, gestational age at birth (for corrected age), sex, birth type (affects pidyon haben)                               |
+| `household_profile`              | The `applies_if` answers: firstborn, customs, health fund and tier, Rh, feeding intent. Every column nullable, because an unanswered condition must not match |
+| `task_state`                     | One row per decision: KB item, the version it was decided under, `done`/`skipped`/`open`, who, when, note. No window dates — see ADR-0008                     |
+| `milestone_obs`                  | Milestone, observed date, observer                                                                                                                            |
+| `measurement`                    | Weight, length, head circumference, date                                                                                                                      |
+| `inventory_item`                 | See Things                                                                                                                                                    |
+| `document`                       | Storage path, type, linked task                                                                                                                               |
+| `coach_session`, `coach_message` | Summary, decisions, transcript                                                                                                                                |
+| `share_grant`                    | Grantee or hashed token, scopes, expiry, revoked                                                                                                              |
+| `mcp_client`                     | OAuth client, scopes, last used, revoked                                                                                                                      |
+| `audit_log`                      | Who (user or MCP client), what, before/after, when                                                                                                            |
 
-**Schedule engine:** a pure function `(kb_items, anchors, today) → instances`. Anchors are LMP, EDD, birth and corrected birth. Rules handle the special cases: the RSV birth-month rule (April–August births get Beyfortus at Tipat Halav), brit on day 8 with postponement, pidyon haben on day 31 only for a firstborn son by vaginal birth, and Shabbat. Instances are materialized when an anchor changes, so reminders are plain SQL queries.
+**Schedule engine:** a pure function `(kb_items, anchors, today) → instances`. Anchors are LMP, EDD, birth and corrected birth. Rules handle the special cases: the RSV birth-month rule (April–August births get Beyfortus at Tipat Halav), brit on day 8 with postponement, pidyon haben on day 31 only for a firstborn son by vaginal birth, and Shabbat. Instances are materialized at read time, on every read, so a corrected EDD moves every window at once and nothing stored can disagree with the engine. Reminders therefore run the engine per household rather than selecting rows that are due this week — the trade is set out in [ADR-0008](adr/0008-derive-windows-store-only-decisions.md).
 
 **Making it work for every family:** KB items add `locales` (`he` and `en` text), `country` (`IL` first), and `applies_if` conditions: dating method, number of babies, birth type, health fund and tier, customs, first or later child. The engine skips items whose conditions don't match, so one KB serves everyone. New household tables: `medicine_log`, `allergen_log`, `contact`, `check_in`, `recall_match` and `calendar_feed` (hashed token). A child can be linked to a second household for separated co-parents, with only the shared logs visible to both.
 
@@ -327,7 +328,7 @@ A weekly job watches the source pages each KB item cites, and any change becomes
 3. Same hash as last run: stop. Changed: diff against the stored snapshot.
 4. Send the diff plus the affected KB items to Claude, which returns which fields may be outdated and a proposed YAML edit, with the changed sentence quoted.
 5. Open a PR labelled `guidance-change` with the diff, the proposal and links. Either parent reviews it against the source page.
-6. On merge, CI validates the schema, bumps each item's `version` and deploys. The app shows "guidance updated" on affected open tasks and keeps completed ones on their old version.
+6. On merge, CI validates the schema, bumps each item's `version` and deploys. An open task is simply re-derived from the new version — there is no stored row to supersede — and a completed one keeps the version it was decided under and shows "guidance updated".
 
 Also: `review_by` dates on every item open an issue when they pass, so items with no page change still get rechecked. Fetch politely: once a week, identified user agent, cached.
 

@@ -39,34 +39,38 @@ TypeScript everywhere except the watcher. Pin the latest stable version **that t
 
 Resolved and verified against the registries on 2026-11-07, at scaffold time.
 These are the exact versions in `pnpm-lock.yaml`; Dependabot proposes changes
-weekly and a human merges them.
+weekly and a human merges them. Three rows were added later, at step 5a, and
+their "latest" column was re-checked on 2026-11-15: `@playwright/test`,
+`eslint-config-next` and `@supabase/ssr`.
 
-| Package                        | Pinned                  | Latest at pinning | Why not latest                                                                                                                                                                                                                  |
-| ------------------------------ | ----------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Node                           | 24 LTS (Krypton)        | 26 LTS (Lithium)  | Krypton has a year of field use; every peer range accepts it                                                                                                                                                                    |
-| pnpm                           | 12.18.0                 | 12.18.0           | —                                                                                                                                                                                                                               |
-| **TypeScript**                 | **6.0.3**               | **7.0.2**         | **TypeScript 7 ships no compiler API, so `typescript-eslint` declares `typescript <6.1.0` and cannot load it. Latest means no lint at all. ADR-0002**                                                                           |
-| ESLint                         | 10.14.0                 | 10.14.0           | flat config; `next lint` was removed in Next.js 16                                                                                                                                                                              |
-| typescript-eslint              | 8.72.1                  | 8.72.1            | —                                                                                                                                                                                                                               |
-| Next.js                        | 16.4.5                  | 16.4.5            | —                                                                                                                                                                                                                               |
-| React / React DOM              | 19.3.1                  | 19.3.1            | —                                                                                                                                                                                                                               |
-| Tailwind CSS                   | 4.3.5                   | 4.3.5             | —                                                                                                                                                                                                                               |
-| next-intl                      | 4.14.9                  | 4.14.9            | peers `next ^16`                                                                                                                                                                                                                |
-| Serwist (`@serwist/next`)      | 9.5.13                  | 9.5.13            | peers `next >=14`; the Turbopack interaction is a step 6 risk                                                                                                                                                                   |
-| zod                            | 4.6.7                   | 4.6.7             | —                                                                                                                                                                                                                               |
-| Vitest                         | 5.1.0                   | 5.1.0             | engines `^22.12 \|\| ^24 \|\| >=26`                                                                                                                                                                                             |
-| Playwright                     | 1.65.0                  | 1.65.0            | added at step 5 with the first e2e test                                                                                                                                                                                         |
-| `@modelcontextprotocol/sdk`    | 1.32.2                  | 1.32.2            | no 2.x line exists on npm                                                                                                                                                                                                       |
-| `@supabase/supabase-js`        | 2.119.0                 | 2.119.0           | —                                                                                                                                                                                                                               |
-| Supabase CLI                   | 3.0.0                   | 3.0.0             | local by default; ADR-0003                                                                                                                                                                                                      |
-| `@anthropic-ai/sdk`            | 1.6.0                   | 1.6.0             | added at step 11 with the coach                                                                                                                                                                                                 |
-| `@hebcal/core`                 | 6.15.0                  | 6.15.0            | added at step 4                                                                                                                                                                                                                 |
-| date-fns                       | **not used**            | 4.4.0             | The engine hand-rolls its date arithmetic on ISO strings in UTC, so no local-time call can exist in it. A general date library makes a `Date` with a time easy to reach for, and that is the one bug this package cannot afford |
-| Prettier                       | 3.9.10                  | 3.9.10            | —                                                                                                                                                                                                                               |
-| knip                           | 6.44.1                  | 6.44.2            | 6.44.2 was published inside the 24-hour `minimumReleaseAge` window                                                                                                                                                              |
-| Python (watcher)               | 3.13                    | 3.13              | —                                                                                                                                                                                                                               |
-| httpx / trafilatura / PyGithub | 0.28.1 / 2.3.1 / 2.10.0 | same              | added at step 13                                                                                                                                                                                                                |
-| ruff / pytest                  | 0.17.4 / 9.2.0          | same              | —                                                                                                                                                                                                                               |
+| Package                        | Pinned                  | Latest at pinning | Why not latest                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ------------------------------ | ----------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Node                           | 24 LTS (Krypton)        | 26 LTS (Lithium)  | Krypton has a year of field use; every peer range accepts it                                                                                                                                                                                                                                                                                                                                                                                |
+| pnpm                           | 12.18.0                 | 12.18.0           | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| **TypeScript**                 | **6.0.3**               | **7.0.2**         | **TypeScript 7 ships no compiler API, so `typescript-eslint` declares `typescript <6.1.0` and cannot load it. Latest means no lint at all. ADR-0002**                                                                                                                                                                                                                                                                                       |
+| ESLint                         | 10.14.0                 | 10.14.0           | flat config; `next lint` was removed in Next.js 16                                                                                                                                                                                                                                                                                                                                                                                          |
+| typescript-eslint              | 8.72.1                  | 8.72.1            | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Next.js                        | 16.4.5                  | 16.4.5            | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| React / React DOM              | 19.3.1                  | 19.3.1            | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Tailwind CSS                   | 4.3.5                   | 4.3.5             | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| next-intl                      | 4.14.9                  | 4.14.9            | peers `next ^16`                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Serwist (`@serwist/next`)      | 9.5.13                  | 9.5.13            | peers `next >=14`; the Turbopack interaction is a step 6 risk                                                                                                                                                                                                                                                                                                                                                                               |
+| zod                            | 4.6.7                   | 4.6.7             | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Vitest                         | 5.1.0                   | 5.1.0             | engines `^22.12 \|\| ^24 \|\| >=26`                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `@playwright/test`             | **1.63.0**              | 1.65.1            | Arrived at step 5a with 21 end-to-end tests. Every Playwright release expects a particular browser build, and 1.63.0 is the release whose Chromium the build environment already carries — so the suite runs there with `PLAYWRIGHT_BROWSERS_PATH` pointed at it and no download. CI installs its own Chromium with `playwright install --with-deps chromium`, so the pin costs nothing there. Revisit when the environment's browser moves |
+| `eslint-config-next`           | 16.4.5                  | 16.4.6            | Added at step 5a; it is what brings jsx-a11y and react-hooks. Kept level with `next` itself, because the config carries `@next/eslint-plugin-next` from the same release and a lint plugin ahead of the framework enforces rules about code that has not shipped                                                                                                                                                                            |
+| `@supabase/ssr`                | 0.12.7                  | 0.12.7            | Added at step 5a: the cookie-aware client, which is how a session reaches a cookie store. Restricted to `apps/web/lib/services` by the same lint rule as `@supabase/supabase-js`                                                                                                                                                                                                                                                            |
+| `@modelcontextprotocol/sdk`    | 1.32.2                  | 1.32.2            | no 2.x line exists on npm                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `@supabase/supabase-js`        | 2.119.0                 | 2.119.0           | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Supabase CLI                   | 3.0.0                   | 3.0.0             | local by default; ADR-0003                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `@anthropic-ai/sdk`            | 1.6.0                   | 1.6.0             | added at step 11 with the coach                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `@hebcal/core`                 | 6.15.0                  | 6.15.0            | added at step 4                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| date-fns                       | **not used**            | 4.4.0             | The engine hand-rolls its date arithmetic on ISO strings in UTC, so no local-time call can exist in it. A general date library makes a `Date` with a time easy to reach for, and that is the one bug this package cannot afford                                                                                                                                                                                                             |
+| Prettier                       | 3.9.10                  | 3.9.10            | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| knip                           | 6.44.1                  | 6.44.2            | 6.44.2 was published inside the 24-hour `minimumReleaseAge` window                                                                                                                                                                                                                                                                                                                                                                          |
+| Python (watcher)               | 3.13                    | 3.13              | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| httpx / trafilatura / PyGithub | 0.28.1 / 2.3.1 / 2.10.0 | same              | added at step 13                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ruff / pytest                  | 0.17.4 / 9.2.0          | same              | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 
 **Supply chain.** `pnpm-workspace.yaml` sets `minimumReleaseAge: 1440`, so no
 version published in the last 24 hours is installable — a compromised publish is
@@ -226,17 +230,17 @@ sequenceDiagram
   participant DB as Postgres (RLS)
   participant RT as Realtime
   actor D as Parent A (PWA)
-  Y->>W: completeTask(taskId, note)
+  Y->>W: decideTaskAction(kbItemId, done)
   Note over Y: Optimistic UI, item ticked
-  W->>S: completeTask(ctx, taskId, note)
-  S->>DB: UPDATE task_instance (user JWT)
-  DB-->>S: Row returned, RLS passed
+  W->>S: decideTask(ctx, householdId, kbItemId, done)
+  S->>DB: UPSERT task_state (user JWT)
+  DB-->>S: RLS passed, no window dates stored
   S->>DB: INSERT audit_log
-  S-->>W: TaskInstance
-  W-->>Y: Confirmed
-  DB-)RT: Change event
-  RT-)D: task_instance updated
-  Note over D: Today re-renders with Parent B's avatar
+  S-->>W: Decision recorded
+  W-->>Y: revalidatePath, both screens re-read
+  DB-)RT: task_state change event
+  RT-)D: Notification, payload not trusted
+  Note over D: router.refresh, re-read and re-materialized by the service layer
 ```
 
 **3. Connecting Claude over MCP, then a tool call**
@@ -259,7 +263,7 @@ sequenceDiagram
   C->>M: tools/call complete_task (Bearer)
   M->>M: Verify token, scope, household
   M->>S: completeTask(ctx as MCP client)
-  S->>DB: UPDATE task_instance
+  S->>DB: UPSERT task_state
   S->>DB: INSERT audit_log(client=Claude)
   S-->>M: Result
   M-->>C: Tool result, labelled as data
@@ -386,15 +390,20 @@ classDiagram
     +List~Rule~ rules
   }
   class TaskInstance {
-    +uuid id
+    <<derived>>
     +string kbItemId
     +int kbVersion
     +Date dueStart
     +Date dueEnd
     +TaskStatus status
-    +uuid doneBy
-    +complete(by, note)
-    +reopen(by)
+  }
+  class TaskState {
+    +string kbItemId
+    +int kbVersion
+    +Decision decision
+    +uuid actedBy
+    +Date actedAt
+    +string note
   }
   class InventoryItem {
     +string name
@@ -424,13 +433,14 @@ classDiagram
   Household "1" --> "1..*" Member
   Household "1" --> "0..1" Pregnancy
   Household "1" --> "*" Child
-  Household "1" --> "*" TaskInstance
+  Household "1" --> "*" TaskState
   Household "1" --> "*" InventoryItem
   Household "1" --> "*" ShareGrant
   Household "1" --> "*" McpClient
   Household "1" --> "*" AuditEntry
   KbItem *-- Window
   TaskInstance --> KbItem : from version
+  TaskState --> TaskInstance : overrides status
   ScheduleEngine ..> KbItem : reads
   ScheduleEngine ..> EngineContext : uses
   ScheduleEngine ..> TaskInstance : creates
@@ -441,7 +451,7 @@ classDiagram
   Rule <|.. ShabbatShiftRule
 ```
 
-In code these are plain types plus functions, not classes with hidden state. `Pregnancy.anchors()` and `Child.correctedAge()` are pure helpers in `packages/engine`.
+In code these are plain types plus functions, not classes with hidden state. `Pregnancy.anchors()` and `Child.correctedAge()` are pure helpers in `packages/engine`. `TaskInstance` is a value the engine returns on every read, not a row: `TaskState` is the only part of it Postgres keeps, and it is the decision rather than the dates (ADR-0008).
 
 ## Database
 
@@ -539,6 +549,27 @@ erDiagram
 
 <!-- /generated: er -->
 
+**What the tables hold.** `pregnancy` carries the anchors: `dating_method` plus a
+check constraint tying each method to the date it is named after, so an
+`ultrasound` row without an `edd` cannot exist — the engine produces no tasks at
+all when its anchor is missing, and that failure looks like an empty checklist
+rather than like an error. `household_profile` carries the `applies_if` answers
+with **every column nullable**, because a condition the profile cannot answer
+must not match, and a default would be a guess wearing an answer's clothes.
+`task_state` carries one row per `(household_id, kb_item_id)`: the decision, the
+KB version it was made under, who made it and when. It is the one table in the
+`supabase_realtime` publication, so the other parent's screen can follow a tick.
+`audit_log` carries who did what, and an `actor_kind = 'mcp'` row must name its
+client — "revoke all AI access" at step 10 has to be able to show the parent what
+that client did.
+
+**There is no `task_instance` table, and that is deliberate.** A window is day
+offsets from an anchor, so `@kenn/engine` materialises every window at read time
+and Postgres stores only what a person decided. A corrected EDD then moves every
+window at once and no stored row can disagree with the engine. The cost —
+reminders cannot be a plain SQL select — and the alternatives are in
+[ADR-0008](adr/0008-derive-windows-store-only-decisions.md).
+
 **The one RLS pattern, used on every household table:**
 
 ```sql
@@ -550,23 +581,33 @@ language sql stable security definer set search_path = public as $$
   );
 $$;
 
-alter table task_instance enable row level security;
+alter table task_state enable row level security;
 
-create policy task_rw on task_instance
+create policy task_state_rw on task_state
   for all
   using (is_member(household_id))
   with check (is_member(household_id));
 ```
 
-A pgTAP test per table signs in as a member of household A and asserts zero rows from household B, for select, insert, update and delete. A new table without that test fails CI.
+A pgTAP test per table signs in as a member of household A and asserts zero rows from household B, for select, insert, update and delete. A new table without that test fails CI. Seven files, 76 assertions.
+
+**One table departs from that pattern: `audit_log` is append-only.** It has a
+select policy and an insert policy, both `is_member(household_id)`, and
+deliberately no update or delete policy, so both default-deny. An audit log its
+own subject can edit is not an audit log. The refusal has to be asserted because
+it is silent — an `UPDATE` with no matching policy reports zero rows rather than
+raising — so `tests/audit_log.sql` checks that a member cannot change or remove
+their **own** household's history, which is the one place in this schema where
+the positive case is a refusal. A second table claiming the same exemption needs
+its own ADR.
 
 ## Task lifecycle
 
-Time moves a task between states by itself; only people or MCP clients mark it done. Reminders fire on two transitions only: when a window opens, and 3 days before it closes.
+Time moves a task between states by itself; only people or MCP clients mark it done. The four time states are computed from the window on every read and none of them is stored — `task_state` holds the decision and nothing else (ADR-0008). Reminders fire on two transitions only: when a window opens, and 3 days before it closes (step 6).
 
 ```mermaid
 stateDiagram-v2
-  [*] --> Upcoming : materialized
+  [*] --> Upcoming : derived at read time
   Upcoming --> Open : window start reached
   Open --> Closing : 3 days before end
   Closing --> Overdue : end passed
@@ -574,17 +615,19 @@ stateDiagram-v2
   Open --> Done : completed
   Closing --> Done : completed
   Overdue --> Done : completed late
-  Done --> Open : reopened
   Upcoming --> Skipped : not applicable
   Open --> Skipped : not applicable
-  Upcoming --> Superseded : new KB version
-  Open --> Superseded : new KB version
-  Superseded --> [*]
+  Closing --> Skipped : not applicable
+  Overdue --> Skipped : not applicable
+  Done --> Open : put back, the window decides
+  Skipped --> Open : put back, the window decides
   Done --> [*]
   Skipped --> [*]
 ```
 
-`Superseded` tasks are replaced by a fresh instance from the new KB version, and the UI shows "guidance updated" on it. `Done` tasks are never superseded, so your history stays as it happened.
+A decision overrides the clock: a done item reads `done` rather than `overdue`, and putting it back returns it to whatever its window says today — which is why the time-only status travels with every task as `timeStatus`, so an undo needs no second request.
+
+A new KB version supersedes nothing. An item nobody has decided has no row, so it is simply re-derived from the current version; a completed one keeps the `kb_version` it was decided under and is shown as "guidance updated", so your history stays as it happened. `superseded` is still in the engine's status union and nothing produces it.
 
 ## Repository scaffold
 
@@ -596,11 +639,14 @@ kenn/
 ├── apps/
 │   └── web/                      # Next.js PWA
 │       ├── CLAUDE.md             # app-specific rules (RSC, server actions, i18n)
-│       ├── app/[locale]/         # he / en routes: today, checklist, things, coach, safety
+│       ├── app/[locale]/         # he / en routes: sign-in, join, onboarding
+│       ├── app/[locale]/(app)/   # signed-in, force-dynamic: today, checklist, household
 │       ├── app/api/mcp/          # remote MCP server (Streamable HTTP)
 │       ├── app/api/oauth/        # OAuth 2.1 endpoints for MCP clients
 │       ├── app/api/ics/          # calendar feed
 │       ├── lib/services/         # the service layer: the only DB caller
+│       ├── lib/schemas/          # one zod schema per input, shared by UI and actions
+│       ├── lib/today.ts          # the only clock in the app (Asia/Jerusalem)
 │       ├── lib/coach/            # context builder, red-flag guard, proposals
 │       ├── messages/             # he.json, en.json (ICU)
 │       └── e2e/                  # Playwright tests
@@ -609,7 +655,10 @@ kenn/
 │   ├── kb/
 │   │   ├── content/              # pregnancy/, baby/, safety/, rights/, things/ (*.yaml)
 │   │   ├── schema.ts             # zod schema for a KB item
-│   │   └── scripts/              # validate, seed, csv-to-yaml
+│   │   ├── load.ts               # reads and parses the YAML: validator and build share it
+│   │   ├── items.ts              # what the app imports; re-parses the artefact, never casts
+│   │   ├── generated/items.json  # `pnpm kb:build` output, committed (see Build and release)
+│   │   └── scripts/              # validate, build
 │   ├── db/
 │   │   ├── supabase/migrations/  # SQL migrations, one per change
 │   │   ├── supabase/tests/       # pgTAP RLS tests
@@ -627,6 +676,8 @@ kenn/
 │   ├── adr/                      # one file per architecture decision
 │   ├── learnings/                # one file per session (see Self-improving loop)
 │   └── kb-authoring.md           # how to write and review a KB item
+├── scripts/                      # the gates and generators: docs:gen, check:private,
+│                                 # check:prerender, check:twice, dev:env
 ├── .claude/
 │   ├── agents/                   # planner, reviewer, security-reviewer, doc-keeper, kb-curator
 │   ├── skills/                   # plan-feature, implement-step, review-code, update-docs, retro, ...
@@ -640,20 +691,24 @@ The split is deliberate: `engine` and `kb` have no dependency on Next.js or Supa
 
 Every change is a branch and a PR; `main` is always deployable and deploys itself. Database changes ship as migrations in the same PR as the code that needs them.
 
-| Command              | Does                                                                                                                                                                                      |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm i`             | Install all workspaces                                                                                                                                                                    |
-| `pnpm db:start`      | Local Supabase in Docker, migrations applied, `seed.sql` loaded                                                                                                                           |
-| `pnpm dev`           | Next.js on localhost against local Supabase                                                                                                                                               |
-| `pnpm db:new <name>` | New empty migration file                                                                                                                                                                  |
-| `pnpm db:types`      | Regenerate `packages/db/types.ts` from the schema                                                                                                                                         |
-| `pnpm test`          | Vitest (engine, services), pgTAP (RLS)                                                                                                                                                    |
-| `pnpm e2e`           | Playwright against the local app                                                                                                                                                          |
-| `pnpm kb:validate`   | zod-validate every KB YAML, check locales and sources                                                                                                                                     |
-| `pnpm docs:gen`      | Regenerate the ER diagram, KB catalog and MCP tool list                                                                                                                                   |
-| `pnpm check`         | All of the above that CI runs, in one go                                                                                                                                                  |
-| `pnpm check:twice`   | Runs the gate twice and compares a hash of every tracked file, so a non-idempotent generator fails here rather than on the next run                                                       |
-| `pnpm check:private` | Refuses real names, real email addresses and key material. Contains no denylist of names — it reads the clone's git identity at runtime, so no name is ever committed to enforce the rule |
+| Command                | Does                                                                                                                                                                                      |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm i`               | Install all workspaces                                                                                                                                                                    |
+| `pnpm db:start`        | Local Supabase in Docker, migrations applied, `seed.sql` loaded                                                                                                                           |
+| `pnpm dev`             | Next.js on localhost against local Supabase                                                                                                                                               |
+| `pnpm db:new <name>`   | New empty migration file                                                                                                                                                                  |
+| `pnpm db:types`        | Regenerate `packages/db/types.ts` from the schema                                                                                                                                         |
+| `pnpm test`            | Vitest: the engine, the service layer against a fake client, the clock module, and the repository scans                                                                                   |
+| `pnpm e2e`             | Playwright against the local app                                                                                                                                                          |
+| `pnpm db:test`         | pgTAP: RLS per table, seven files and 76 assertions                                                                                                                                       |
+| `pnpm kb:build`        | Compile `packages/kb/content` into `generated/items.json`, which is committed                                                                                                             |
+| `pnpm dev:env`         | Write `apps/web/.env.local` from `supabase status`, so no local key enters git                                                                                                            |
+| `pnpm kb:validate`     | zod-validate every KB YAML, check locales and sources                                                                                                                                     |
+| `pnpm docs:gen`        | Regenerate the ER diagram, KB catalog and MCP tool list                                                                                                                                   |
+| `pnpm check`           | All of the above that CI runs, in one go                                                                                                                                                  |
+| `pnpm check:twice`     | Runs the gate twice and compares a hash of every tracked file, so a non-idempotent generator fails here rather than on the next run                                                       |
+| `pnpm check:private`   | Refuses real names, real email addresses and key material. Contains no denylist of names — it reads the clone's git identity at runtime, so no name is ever committed to enforce the rule |
+| `pnpm check:prerender` | Reads `prerender-manifest.json` after the build and fails if a household route was prerendered. A comment claiming a page is dynamic is not evidence; the manifest is                     |
 
 ```mermaid
 flowchart LR
@@ -663,7 +718,7 @@ flowchart LR
   D --> E["Supabase in CI:<br/>migrations + pgTAP"]
   E --> F["KB validate"]
   F --> G["Docs drift check"]
-  G --> H["Vercel preview +<br/>Playwright"]
+  G --> H["Playwright e2e:<br/>Supabase + realtime in CI"]
   H --> I["AI review agent"]
   I --> J{"Human approves?"}
   J -- no --> A
@@ -676,6 +731,19 @@ flowchart LR
 
 Migrations apply before the new code deploys, so every migration must be backward-compatible with the running version: add columns first, remove them a release later.
 
+**Two artefacts are generated and committed:** `packages/db/types.ts` from the
+schema and `packages/kb/generated/items.json` from the YAML. Both are in git
+because the thing that consumes them cannot produce them — a bundler cannot
+follow the `readdirSync` that reads `kb/content`, so the knowledge base would
+simply not be there once the app is built. `items.ts` re-parses the artefact
+through the zod schema rather than casting to it: a cast would turn a
+hand-edited file into silently wrong medical guidance on a screen, and a parse
+makes it a loud failure at startup. `pnpm check:twice` runs the gate twice and
+proves the KB build is byte-identical, which is the property that stops a
+generator passing once and failing next time. `types.ts` is not in that run — it
+needs a database, so `pnpm db:types` regenerates it and the `Migrations and RLS`
+job is what fails when it is stale.
+
 ### Branch protection and the PR gate
 
 `main` is protected by a GitHub **ruleset** — rulesets rather than classic branch
@@ -687,13 +755,13 @@ session reaches GitHub through a proxy that permits content reads and writes but
 refuses the administration API, so a ruleset cannot be created from inside one
 however the token is scoped. The script detects that and says so.
 
-| Rule                     | Effect                                                                                                                                                                                                                |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pull_request`           | No direct pushes to `main`. **Zero required approvals for now**, so whoever opens a PR can merge it once CI is green.                                                                                                 |
-| `required_status_checks` | All three CI jobs must pass: `Typecheck, lint and test`, `Migrations and RLS` (migrations apply, pgTAP green, `types.ts` current) and `Gov watcher (Python)`. `strict` is on, so a PR must be up to date with `main`. |
-| `non_fast_forward`       | No force pushes. History on `main` is append-only.                                                                                                                                                                    |
-| `deletion`               | `main` cannot be deleted.                                                                                                                                                                                             |
-| Thread resolution        | Review conversations must be resolved before merge.                                                                                                                                                                   |
+| Rule                     | Effect                                                                                                                                                                                                                                          |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pull_request`           | No direct pushes to `main`. **Zero required approvals for now**, so whoever opens a PR can merge it once CI is green.                                                                                                                           |
+| `required_status_checks` | All four CI jobs must pass: `Typecheck, lint and test`, `Migrations and RLS` (migrations apply, pgTAP green, `types.ts` current), `End to end (Playwright)` and `Gov watcher (Python)`. `strict` is on, so a PR must be up to date with `main`. |
+| `non_fast_forward`       | No force pushes. History on `main` is append-only.                                                                                                                                                                                              |
+| `deletion`               | `main` cannot be deleted.                                                                                                                                                                                                                       |
+| Thread resolution        | Review conversations must be resolved before merge.                                                                                                                                                                                             |
 
 Zero approvals is deliberate and temporary: it keeps `main` safe from an
 accidental push or a red build while a single builder still works alone. **When
@@ -702,6 +770,12 @@ that is the only change needed, and a `CODEOWNERS` file can follow.
 
 The required-check names are the `name:` of each job in `ci.yml`. Renaming a job
 there silently stops the check being required, so rename both together.
+
+`End to end (Playwright)` is the fourth job. It arrived with step 5a and is
+listed in `scripts/setup-branch-protection.sh` with the other three — but that
+script has still never been run, so **no check is required on `main` today**.
+Running it once from a machine that is not a cloud session is what makes all
+four binding.
 
 Three settings the script cannot reach, worth turning on in the repository's
 Security and analysis settings: secret scanning with push protection, Dependabot
@@ -852,14 +926,14 @@ against a registry or current vendor documentation, not from memory. Where a
 correction had a real trade-off it became an ADR, and the ADR is the long form —
 it is not restated here.
 
-| #   | Correction                                                                                                                                                                                | Where the reasoning lives                                   |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| 1   | TypeScript is pinned to 6.0.3, not the latest 7.0.2: TypeScript 7 ships no compiler API, so `typescript-eslint` refuses to load it and "pin the latest" would have meant no linter at all | [ADR-0002](adr/0002-pin-typescript-6-for-lint-support.md)   |
-| 2   | `next lint` was removed in Next.js 16, so ESLint runs directly from the repository root over every workspace                                                                              | "Technology stack", above                                   |
-| 3   | Next.js 16 is Turbopack-only and fails the build on a custom webpack config, which is what Serwist needs — the known risk at step 6                                                       | [ADR-0004](adr/0004-nextjs-over-sveltekit.md)               |
-| 4   | Supabase CLI v3 is local by default, so a bare `db push` can no longer reach production                                                                                                   | [ADR-0003](adr/0003-supabase-cli-v3-conventions.md)         |
-| 5   | Permission `deny` rules are guardrails, not a security boundary                                                                                                                           | `.claude/README.md`, and `CLAUDE.md`                        |
-| 6   | `docs-drift.yml`, `deploy.yml` and `watcher.yml` are deliberately deferred: a workflow that can only pass vacuously reads as a gate it is not                                             | steps 1, 5 and 13 in [`plans/roadmap.md`](plans/roadmap.md) |
+| #   | Correction                                                                                                                                                                                | Where the reasoning lives                                    |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| 1   | TypeScript is pinned to 6.0.3, not the latest 7.0.2: TypeScript 7 ships no compiler API, so `typescript-eslint` refuses to load it and "pin the latest" would have meant no linter at all | [ADR-0002](adr/0002-pin-typescript-6-for-lint-support.md)    |
+| 2   | `next lint` was removed in Next.js 16, so ESLint runs directly from the repository root over every workspace                                                                              | "Technology stack", above                                    |
+| 3   | Next.js 16 is Turbopack-only and fails the build on a custom webpack config, which is what Serwist needs — the known risk at step 6                                                       | [ADR-0004](adr/0004-nextjs-over-sveltekit.md)                |
+| 4   | Supabase CLI v3 is local by default, so a bare `db push` can no longer reach production                                                                                                   | [ADR-0003](adr/0003-supabase-cli-v3-conventions.md)          |
+| 5   | Permission `deny` rules are guardrails, not a security boundary                                                                                                                           | `.claude/README.md`, and `CLAUDE.md`                         |
+| 6   | `docs-drift.yml`, `deploy.yml` and `watcher.yml` are deliberately deferred: a workflow that can only pass vacuously reads as a gate it is not                                             | steps 1, 5b and 13 in [`plans/roadmap.md`](plans/roadmap.md) |
 
 Two corrections are still open rather than settled:
 
@@ -871,9 +945,11 @@ Two corrections are still open rather than settled:
   server — is right; the named fallback is probably unavailable. A step 9
   decision, tracked in [`decisions.md`](decisions.md).
 
-- **`apps/web` declares dependencies it does not yet import.** They are declared
-  so the lockfile proves the whole version matrix resolves together from the
-  first commit, and `knip.json` parks the unimported ones in
-  `ignoreDependencies`. Each entry comes off with the step that starts using it —
-  step 2 took `next-intl`, `tailwindcss`, `@tailwindcss/postcss` and `@kenn/ui`.
-  An entry still there at Gate A means a dependency nothing uses.
+- **`apps/web` declares dependencies it does not yet import.** Nearly settled.
+  They were declared so the lockfile proves the whole version matrix resolves
+  together from the first commit, and `knip.json` parks the unimported ones in
+  `ignoreDependencies`. Each entry comes off with the step that starts using it:
+  step 2 took `next-intl`, `tailwindcss`, `@tailwindcss/postcss` and `@kenn/ui`,
+  and step 5a took `@supabase/supabase-js`, `zod`, `@kenn/db`, `@kenn/engine`
+  and `@kenn/kb`. Only `serwist` and `@serwist/next` remain, for step 6. An
+  entry still there at Gate A means a dependency nothing uses.
