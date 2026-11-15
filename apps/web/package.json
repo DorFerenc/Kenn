@@ -3,13 +3,14 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Kenn PWA: UI, API routes, the /mcp route. Placeholder until roadmap step 1.",
+  "description": "Kenn PWA: UI, server actions, the service layer, the /mcp route.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "e2e": "node -e \"console.log('Playwright e2e arrives at roadmap step 5.')\""
+    "e2e": "playwright test",
+    "e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@kenn/db": "workspace:*",
@@ -17,6 +18,7 @@
     "@kenn/kb": "workspace:*",
     "@kenn/ui": "workspace:*",
     "@serwist/next": "9.5.13",
+    "@supabase/ssr": "0.12.7",
     "@supabase/supabase-js": "2.119.0",
     "next": "16.4.5",
     "next-intl": "4.14.9",
@@ -26,6 +28,7 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "@tailwindcss/postcss": "4.3.5",
     "@types/node": "26.6.6",
     "@types/react": "19.3.0",

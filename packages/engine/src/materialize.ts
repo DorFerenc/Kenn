@@ -103,6 +103,9 @@ export function materialize(
 }
 
 /** What the Today screen needs: due now or overdue, soonest first. */
-export function dueNow(instances: TaskInstance[]): TaskInstance[] {
+export function dueNow<T extends TaskInstance>(instances: T[]): T[] {
+  // Generic so a caller that carries more than the engine does — the app's view
+  // type adds the stored decision and the display text — gets its own type back
+  // rather than a TaskInstance with the rest quietly erased.
   return instances.filter((i) => ['open', 'closing', 'overdue'].includes(i.status));
 }
