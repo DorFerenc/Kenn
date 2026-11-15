@@ -38,9 +38,21 @@ Ordered by what has actually hurt projects like this one.
 
 **Security and data isolation** — a query outside `lib/services`; the service-role
 key on a request path; a new household table without RLS or without its pgTAP
-test; a policy with `using (true)` or missing `with check`; a `security definer`
-function without `search_path`; a secret in `NEXT_PUBLIC_*`; real-looking data in
-`seed.sql`.
+test; a policy with `using (true)` or missing `with check`; **a policy that is
+`for all` when the app only reads, inserts and updates** — the Data API exposes
+every table to a member's own JWT, so a policy silent about the operation is a
+delete nobody wrote; **a cascade into an append-only table**, which removes rows
+without an update or a delete and so passes every assertion about them; a
+`security definer` function without `search_path`; a secret in `NEXT_PUBLIC_*`;
+real-looking data in `seed.sql`.
+
+**A claim and the layer that would have to hold it** — a comment, an ADR or a
+commit message asserting a property ("append-only", "no request path deletes
+this", "one household per person", "aria-current comes from the library") where
+the thing that enforces it is one layer above the attack. Check the claim
+against the boundary, not against the code that happens to respect it. A comment
+asserting a property the code does not implement is a finding, not
+documentation.
 
 **AI boundaries** — fetched, shared or user-written text reaching the model as
 instruction rather than data; an AI-reachable path that can delete, share, read a
@@ -75,9 +87,13 @@ an engine change never run under a non-UTC timezone; **a gate whose violation wa
 only ever planted by hand** — the planting belongs in the test, or the gate dies
 with the terminal session that verified it; **a scan that covers less than it
 claims** — ask what it cannot see, not what it rejects (a glob that matches no
-file, a pattern that misses the common spelling, a file kind skipped); **a
-fixture that continues after its own precondition failed**, which turns one clear
-failure into a confusing one three locators later.
+file, a pattern that misses the common spelling, a file kind skipped); **a gate
+that enumerates what it protects** — derive the list from the filesystem or the
+schema, or invert it into an allowlist, because a hand-written denylist goes
+stale in the direction that hurts; **a fake or mock that ignores a filter the
+real client applies**, which makes a missing `where` clause invisible to every
+test; **a fixture that continues after its own precondition failed**, which turns
+one clear failure into a confusing one three locators later.
 
 **Hygiene** — dead code knip would catch; an unused dependency; a stray
 `console.log`; a TODO with no issue.
