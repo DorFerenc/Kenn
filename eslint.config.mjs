@@ -145,6 +145,17 @@ export default tseslint.config(
               message:
                 'Import across packages by workspace name (@kenn/engine), or by the @/ alias within apps/web.',
             },
+            {
+              // The two names below are the doors in use; this closes the rest
+              // of the wall. A deep import (@supabase/ssr/dist/...) or a
+              // sibling package (@supabase/postgrest-js) is the same boundary
+              // crossing and was not covered. pnpm's strict linking makes an
+              // undeclared package unresolvable, so this is hardening rather
+              // than a live hole — raised by the security review of step 5a.
+              group: ['@supabase/*', '@supabase/*/**'],
+              message:
+                'Only apps/web/lib/services may create a Supabase client. Call a service function instead. See CLAUDE.md.',
+            },
           ],
           paths: [
             {
