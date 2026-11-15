@@ -8,17 +8,135 @@
     "he": "עברית",
     "en": "English"
   },
+  "common": {
+    "signOut": "Sign out",
+    "back": "Back",
+    "notSaid": "Not said",
+    "loading": "One moment…"
+  },
+  "nav": {
+    "today": "Today",
+    "checklist": "Checklist",
+    "household": "Household"
+  },
+  "auth": {
+    "signInTitle": "Sign in to Kenn",
+    "signUpTitle": "New account",
+    "subtitle": "One household, one checklist, two parents.",
+    "email": "Email",
+    "password": "Password",
+    "passwordHelp": "At least 8 characters.",
+    "signInSubmit": "Sign in",
+    "signUpSubmit": "Create account",
+    "toSignUp": "No account yet? Create one",
+    "toSignIn": "Already have an account? Sign in",
+    "errors": {
+      "invalidCredentials": "That email or password is not right.",
+      "emailTaken": "There is already an account with this email.",
+      "weakPassword": "That password is too short — at least 8 characters.",
+      "invalidInput": "That email or password is not in a valid format.",
+      "unknown": "Something failed. Try again in a moment."
+    }
+  },
   "onboarding": {
+    "title": "Let's set Kenn up",
+    "subtitle": "Two minutes, and the checklist is dated from your own pregnancy.",
+    "step": "Step {current} of {total}",
+    "next": "Next",
+    "finish": "Finish",
     "genderForm": {
       "question": "How should we address you?",
       "help": "You can change this at any time in settings.",
       "feminine": "Feminine",
       "masculine": "Masculine",
       "neutral": "Plural (neutral)"
+    },
+    "household": {
+      "label": "Household name",
+      "help": "Just so you recognise it. You can change it later."
+    },
+    "dating": {
+      "question": "How should we date the pregnancy?",
+      "help": "An ultrasound beats a remembered period, and an IVF transfer beats both.",
+      "lmp": "From the last period",
+      "ultrasound": "From an ultrasound due date",
+      "ivf_transfer": "From an IVF transfer",
+      "lmpDate": "First day of the last period",
+      "eddDate": "Estimated due date",
+      "transferDate": "Transfer date"
+    },
+    "fetuses": {
+      "question": "How many babies?",
+      "help": "It changes some of the tests, and the birth grant."
+    },
+    "profile": {
+      "question": "A few more things",
+      "help": "Each answer here hides or shows recommendations. All of them can be skipped.",
+      "firstborn": "This is the first child",
+      "customs": "Tradition",
+      "healthFund": "Health fund",
+      "supplementary": "We have supplementary insurance"
+    },
+    "customs": {
+      "jewish": "Jewish",
+      "muslim": "Muslim",
+      "christian": "Christian",
+      "druze": "Druze",
+      "none": "None"
+    },
+    "healthFund": {
+      "clalit": "Clalit",
+      "maccabi": "Maccabi",
+      "meuhedet": "Meuhedet",
+      "leumit": "Leumit"
+    },
+    "errors": {
+      "invalid": "Something in the form is not valid — check the date."
+    }
+  },
+  "today": {
+    "title": "Today",
+    "gestation": "Week {weeks}+{days}",
+    "gestationHelp": "Counted from the dating you set.",
+    "nextUp": "Next up",
+    "nothingDue": "Nothing due today. That is fine.",
+    "lateCount": "{count, plural, one {one item is late} other {# items are late}}",
+    "seeAll": "See the whole checklist",
+    "noPregnancy": "No pregnancy set up yet."
+  },
+  "checklist": {
+    "title": "Checklist",
+    "empty": "Nothing here.",
+    "group": {
+      "overdue": "Late",
+      "closing": "Closing soon",
+      "open": "Open now",
+      "upcoming": "Later",
+      "done": "Done",
+      "skipped": "Skipped",
+      "superseded": "Replaced"
     }
   },
   "tasks": {
-    "markDone": "Mark as done"
+    "markDone": "Mark as done",
+    "skip": "Skip",
+    "undo": "Undo",
+    "reopen": "Reopen",
+    "doneOn": "Done {date}",
+    "guidanceUpdated": "Guidance updated since",
+    "source": "Source",
+    "priority": {
+      "critical": "Critical",
+      "important": "Important",
+      "optional": "Optional"
+    },
+    "coverage": {
+      "basket": "In the health basket",
+      "supplementary": "Supplementary",
+      "private": "Private",
+      "otc": "Over the counter",
+      "free": "Free"
+    }
   },
   "window": {
     "before": "Opens {date}",
@@ -26,19 +144,47 @@
     "after": "Closed {date}"
   },
   "evidence": {
+    "guideline": "Official guideline",
     "strong": "Strong evidence",
     "moderate": "Moderate evidence",
     "weak": "Weak evidence",
     "custom": "Your own"
   },
+  "household": {
+    "title": "Household",
+    "members": "Who is here",
+    "you": "This is you",
+    "role": {
+      "owner": "Parent",
+      "family": "Family",
+      "caregiver": "Caregiver"
+    },
+    "invite": {
+      "title": "Invite the other parent",
+      "help": "The link is made here and can be sent in a message. It is valid for seven days.",
+      "email": "The other parent's email",
+      "create": "Create a link",
+      "linkTitle": "The link is ready",
+      "linkHelp": "This link is shown once only — all we keep is a hash of it.",
+      "copy": "Copy",
+      "pending": "Pending: {email}",
+      "accepted": "Accepted: {email}",
+      "revoked": "Revoked: {email}",
+      "revoke": "Revoke",
+      "none": "No open invitations.",
+      "invalidEmail": "That email is not in a valid format."
+    }
+  },
+  "join": {
+    "title": "An invitation to Kenn",
+    "body": "This invitation joins you to one household with one checklist.",
+    "accept": "Join",
+    "signInFirst": "You need an account to join. We will come back here after you sign in.",
+    "invalid": "This link is not valid — it may have expired, been revoked, or already been used."
+  },
   "errors": {
     "notFoundTitle": "Page not found",
     "notFoundBody": "The link has probably changed or expired.",
     "backHome": "Back to the home page"
-  },
-  "harness": {
-    "windows": "A task's window",
-    "evidence": "Evidence level",
-    "note": "A step-2 harness. Onboarding and Today replace it at step 5."
   }
 }

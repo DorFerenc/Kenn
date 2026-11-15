@@ -7,7 +7,7 @@
  * is how a screen ends up rendering `tasks.markDone` instead of a verb, so it
  * is passed by one function instead:
  *
- *   t('tasks.markDone', genderValues(form))
+ *   t('tasks.markDone', genderValues(member.genderForm))
  *
  * `genderBranch()` in @kenn/ui is what knows the database says `neutral` and
  * ICU spells that branch `other`.
@@ -16,9 +16,10 @@
 import { genderBranch, type GenderForm } from '@kenn/ui';
 
 /**
- * Until the signed-in member's choice is readable — that needs the service
- * layer, at roadmap step 5 — everyone gets the neutral plural, which is the
- * form that is correct for anyone.
+ * The neutral plural is the fallback, and it is correct for anyone — which is
+ * what makes it the right default on a page with no signed-in member, such as
+ * sign-in or a 404. Every authenticated screen passes the member's own choice,
+ * read through the service layer.
  */
 const DEFAULT_GENDER_FORM: GenderForm = 'neutral';
 
