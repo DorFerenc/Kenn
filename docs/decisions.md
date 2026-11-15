@@ -11,6 +11,137 @@ log from step 0 onward.**
 
 ---
 
+## 2026-11-15 · step 5a · the app, against a database that now enforces its own rules
+
+Step 5 split into 5a and 5b the way step 8 was split; 5a is everything that runs
+against local Supabase and it is done. Learning file:
+[`learnings/2026-11-15-step-5a-service-layer-and-screens.md`](learnings/2026-11-15-step-5a-service-layer-and-screens.md).
+
+307 tests → 364. 30 pgTAP assertions → 94. Playwright went from a stub that
+printed a sentence to 24 tests. Kenn is usable: two parents sign in, onboard,
+and share one checklist dated from their own anchors.
+
+### Decided
+
+- **Windows are derived on every read; Postgres stores only decisions.**
+  There is no `task_instance` table.
+  [ADR-0008](adr/0008-derive-windows-store-only-decisions.md). A corrected EDD
+  moves every window at once because there is nothing stored to move. **The
+  price, named in advance:** step 6's reminders cannot be a plain SQL select —
+  they have to run the engine per household — which buys the certainty that a
+  reminder and the screen cannot disagree.
+- **Default deny means per operation, not only per household.** The security
+  review's finding, and the most valuable thing in the session: the publishable
+  key is public and `[api] schemas = ["public"]` exposes every table, so a
+  signed-in member holds a general-purpose SQL client against their own
+  household. Every policy was `for all`, and `DELETE /rest/v1/household?id=eq.`
+  deleted the household and **cascaded its entire audit log away** — verified
+  against the local stack, not theorised. Three guarantees written into an ADR
+  and a pgTAP suite were true of `apps/web` and false of the database. Now: one
+  policy per operation, **no delete policy on any table**, column privileges for
+  `member` and `invite`, `actor_user_id` and `acted_by` pinned to `auth.uid()`,
+  and the audit foreign key refusing a household delete rather than cascading.
+  This is now the pattern `packages/db/CLAUDE.md` teaches, because the `for all`
+  template is what propagated the hole to four tables in one step.
+- **One household per person is enforced in SQL.** It was a comment, and the
+  code review drove the consequence in a browser: a parent who onboarded their
+  own household and then accepted a partner's invite saw the partner's pregnancy
+  on Today and their own record nowhere. `accept_invite()` refuses a second
+  household with its own errcode, so the join page says "you already have a
+  household" rather than "this link is not valid" — the first is a fact about
+  the reader. Every household read is also scoped by an explicit id now, which
+  is the half that stays correct when step 15 adds a second household on
+  purpose.
+- **The KB is compiled into a committed module** (`pnpm kb:build`), because a
+  bundler cannot follow a `readdirSync`; `items.ts` parses it through the zod
+  schema rather than casting, so a half-written artefact fails at startup
+  instead of becoming wrong guidance on a screen.
+- **One module reads the clock** (`apps/web/lib/today.ts`), asserted by a scan
+  with the violations planted — now including `Date.parse` and a no-argument
+  `Intl#format()`, which the first version was blind to.
+- **`@supabase/ssr` and every `@supabase/*` path are inside the import
+  boundary**, not just the two module names hard rule 1 happens to mention.
+- **Email and a password is the local door**, because the local stack caps
+  outbound email at two an hour and the suite would exhaust it; the hosted
+  password policy and rate limits are pinned in a `[remotes.production]` block
+  **now**, because a mitigation that depends on someone remembering is not one.
+- **Playwright is pinned to 1.63.0, not 1.65.1**, to match the Chromium the
+  build environment carries. Same reasoning as ADR-0002, where "the toolchain"
+  includes the machine.
+- **The wizard asks about Rh.** `preg.anti-d` is the only `applies_if` condition
+  in the whole KB — critical, guideline-level — and nothing asked, so it could
+  never have reached anyone. Tri-state, because "not known" must stay distinct
+  from "no".
+- **A React reconciliation bug that no unit test could see.** The wizard
+  submitted itself from step 3: React mutates `type="button"` into
+  `type="submit"` on the node that was just clicked, and the browser then
+  applies that click's activation behaviour to it. Found by the end-to-end
+  suite on its first full run; fixed with distinct keys.
+
+### Open
+
+**For you:**
+
+- **Supabase (Frankfurt), Vercel and the Anthropic Console with a spend cap** —
+  still the blocker, now on **5b** specifically: Google OAuth, real TOTP
+  enrolment, `deploy.yml`, the production deploy, and the PWA on both phones.
+  Gate A cannot be ticked without it.
+- **Whether email + password survives into production**, or Google OAuth plus
+  TOTP becomes the only door. My recommendation is the latter, with
+  `enable_signup = false`; the `[remotes.production]` block already assumes it.
+- **The Hebrew.** 24 keys became 139, and the gendered imperatives are the ones
+  a native speaker will feel: `סמני` / `סמנו`, `דלגי`, `בטלי`, `פתחי מחדש`,
+  `הצטרפי`, and the new refusal copy on the join page. The wizard's help text is
+  worth a read too — particularly the IVF line, which says we assume a day-5
+  transfer.
+- **`./scripts/setup-branch-protection.sh`, from your own machine.** Still never
+  run, so **nothing is required on `main` today**, including the new Playwright
+  job that is now in its list.
+- **The current week and the ultrasound-corrected EDD.** The seed carries a
+  placeholder and onboarding collects the real one, so this no longer blocks
+  anything — but the app cannot be used in earnest until you have entered it.
+
+**Carried, with reasons:**
+
+- **A write made straight to the Data API leaves no `audit_log` row**, and the
+  audit insert is a second statement that can fail after the change has
+  committed. Both are acceptable with one actor and neither is acceptable once
+  an MCP client is the second one, so **step 9's first task** is one
+  `security definer` function per write — change and audit row in one
+  transaction — with `authenticated` holding no direct insert or update
+  privilege. In the roadmap and in ADR-0008.
+- **MCP provenance has to come from the token, not the request body.**
+  `actor_kind = 'mcp'` is currently a claim by the writer; the `'user'` half is
+  now constrained, and the rest needs step 9's token design.
+- **An IVF transfer is dated as a day-5 blastocyst.** A day-3 embryo is two days
+  out, which can move the edge of the NT window. The wizard says so out loud;
+  asking properly is a column and a migration.
+- **No `Content-Security-Policy` yet.** Deferred again, deliberately: it should
+  land with Serwist at step 6 rather than being written in the same hour as the
+  inline scripts it has to allow.
+- **`requestLocale` stays** over `next/root-params`, which still generates its
+  types during a build and would fail `pnpm typecheck` on a fresh clone.
+- **The invite token travels in a URL path and a query string**, so it reaches
+  browser history and whatever the platform logs. Accepted for a link that is
+  meant to be copied; worth shortening its 7-day life at 5b, when there are real
+  access logs.
+
+**Rule changes proposed, for you to accept or reject** — three `chore(ai):`
+commits, each droppable on its own: two promoted rules in `CLAUDE.md` with the
+mechanical forms in `/review-code`, the `@supabase/*` import boundary, and
+`packages/db/CLAUDE.md` now teaching per-operation policies instead of the
+`for all` template that propagated this step's hole.
+
+### Next
+
+**Step 6** — reminders: Web Push, the Sunday digest and the ICS feed — which
+needs nothing external and inherits ADR-0008's bill: the digest runs the engine
+per household rather than selecting rows. Or **5b** the moment the accounts
+exist. Step 7 and step 8a are also unblocked; step 9 now opens with the audit
+rework above.
+
+---
+
 ## 2026-11-09 · step 2 · i18n, design tokens, and a privacy guard that was asleep
 
 Step 2 done, and three things asked alongside it: fewer and truer documents, a

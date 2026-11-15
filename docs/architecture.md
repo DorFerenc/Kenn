@@ -583,13 +583,34 @@ $$;
 
 alter table task_state enable row level security;
 
-create policy task_state_rw on task_state
-  for all
+create policy task_state_select on task_state
+  for select using (is_member(household_id));
+
+create policy task_state_insert on task_state
+  for insert with check (is_member(household_id) and acted_by = auth.uid());
+
+create policy task_state_update on task_state
+  for update
   using (is_member(household_id))
-  with check (is_member(household_id));
+  with check (is_member(household_id) and acted_by = auth.uid());
 ```
 
-A pgTAP test per table signs in as a member of household A and asserts zero rows from household B, for select, insert, update and delete. A new table without that test fails CI. Seven files, 76 assertions.
+**One policy per operation, and no delete policy anywhere.** This was a single
+`for all` policy until the security review of step 5a, and the reason it is not
+any more is worth stating where the pattern is given: the publishable key is
+public by design and `[api] schemas = ["public"]` exposes every table through
+PostgREST, so a signed-in member holds a general-purpose SQL client against
+their own household, and one authenticated request is as much a request path as
+a server action. `for all` is correct about _which household_ and silent about
+_which operation_, so `DELETE /rest/v1/household?id=eq.<mine>` deleted the
+household and cascaded away its entire audit log, and
+`DELETE /rest/v1/task_state?...` erased a decision ADR-0008 calls structurally
+undeletable. Kenn deletes nothing: a reopen writes `state = 'open'`, a revoke
+writes `revoked_at`, and removal is archival by hard rule 5. Where only some
+columns may change — a member's own language, an invite's `revoked_at` — a
+column privilege says so, because RLS filters rows and cannot express that.
+
+A pgTAP test per table signs in as a member of household A and asserts zero rows from household B, for select, insert, update and delete — and `tests/no_delete_policies.sql` asserts what a member cannot do to their **own** household's rows, which is the question that went unasked until step 5a and is where both real holes were. A new table without its test fails CI. Eight files, 94 assertions.
 
 **One table departs from that pattern: `audit_log` is append-only.** It has a
 select policy and an insert policy, both `is_member(household_id)`, and

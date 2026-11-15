@@ -78,6 +78,32 @@ or remove their **own** household's history, and that both households' rows are
 unchanged afterwards. It is the one place in this schema where the positive case
 is a refusal.
 
+**7. Default deny means per operation, not only per household — added after the
+security review of this step.** Decisions 3 and 5 were both false of the
+database when first written, and the reason generalises past them: the
+publishable key is public and `[api] schemas = ["public"]` exposes every table,
+so a signed-in member holds a general-purpose SQL client against their own
+household, and `for all` says nothing about which operation. One request
+(`DELETE /rest/v1/household?id=eq.<mine>`) deleted the household row and
+cascaded away every `audit_log` row, because a cascade is not subject to the
+referencing table's RLS; another deleted a `task_state` row that decision 3
+calls structurally undeletable. So every table now carries policies for exactly
+the operations the app performs, **no table has a delete policy**, column
+privileges narrow `member` to the caller's own preferences and `invite` to
+`revoked_at`, the audit insert policy pins `actor_user_id` to `auth.uid()`,
+`task_state` pins `acted_by` the same way, and the audit foreign key refuses a
+household delete rather than cascading.
+
+**What is still only true of the application:** a write made straight to the
+Data API with a member's own JWT changes `task_state` or `pregnancy` and leaves
+no `audit_log` row, because the audit write lives in `apps/web`. Closing that
+means one `security definer` function per write — the change and its audit row
+in one transaction, with `authenticated` holding no direct insert or update
+privilege — which also fixes the fact that the audit insert is a second
+statement and can fail after the change has committed. It belongs before step 9
+makes the MCP route a second actor, and it is step 9's first task rather than a
+sentence here.
+
 ## Consequences
 
 - A corrected EDD moves every window at once, with no write and no backfill.
@@ -107,6 +133,15 @@ is a refusal.
 - `packages/db/CLAUDE.md`'s "every household table, without exception" now has
   exactly one exception, named here. A second table claiming the same exemption
   needs its own ADR, or the pattern stops meaning anything.
+- The `for all` template that `packages/db/CLAUDE.md` gives is what propagated
+  the over-broad policies to four tables in one step, so that file now shows the
+  per-operation form instead. Step 8a's columns on `household_profile` inherit
+  the narrower pattern.
+- One household per person is enforced inside `accept_invite()` rather than by a
+  unique index on `member(user_id)`, because step 15 gives a caregiver a role in
+  more than one household and an index would have to be dropped against live
+  data. A check in the one function that adds a membership is the same guarantee
+  today and a one-line change then.
 
 ## Alternatives considered
 

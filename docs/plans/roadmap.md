@@ -94,7 +94,16 @@ flowchart LR
       window is day offsets from an anchor and the engine derives it at read
       time ([ADR-0008](../adr/0008-derive-windows-store-only-decisions.md)).
       Only the two Serwist entries remain in `knip.json`'s
-      `ignoreDependencies`. `docs/learnings/2026-11-15-step-5a-service-layer-and-screens.md`)_
+      `ignoreDependencies`. The two reviews then found what the step had got
+      wrong, and both were the same shape — a guarantee true of `apps/web` and
+      false of the database: every policy was `for all`, so one authenticated
+      request to the Data API could delete a household and cascade away its
+      audit log, and "the household" was a singleton in five reads although
+      nothing stopped a person being in two. Fixed with per-operation policies,
+      no delete policy anywhere, column privileges, and `accept_invite()`
+      refusing a second household. 94 pgTAP assertions, 364 unit tests, 24
+      end-to-end tests.
+      `docs/learnings/2026-11-15-step-5a-service-layer-and-screens.md`)_
 
 - [ ] **5b.** Production: Google OAuth, real MFA enrolment, `deploy.yml`, the
       first production deploy, and the PWA installed from production on both
@@ -143,6 +152,16 @@ flowchart LR
       **Open decision:** which OAuth 2.1 authorization server. Supabase Auth is
       an identity provider, not an AS with dynamic client registration, so the
       plan's fallback probably does not apply. Do not hand-write it.
+      **First task, before any tool:** move each household write into a
+      `security definer` function that performs the change and its `audit_log`
+      row in one transaction, and take direct insert and update privileges away
+      from `authenticated`. Today a write made straight to the Data API with a
+      member's own JWT leaves no audit row, and the audit insert is a second
+      statement that can fail after the change has committed — both acceptable
+      with one actor and neither acceptable once an MCP client is the second
+      one, because everything step 10 promises about AI accountability rests on
+      that column. Raised by the security review of step 5a; recorded in
+      [ADR-0008](../adr/0008-derive-windows-store-only-decisions.md).
 - [ ] **10.** MCP write tools, audit log, undo, "revoke all".
 - [ ] **11.** Coach v1: weekly check-in and voice capture, proposals as
       tap-to-apply cards. Needs the Anthropic key and a spend cap.

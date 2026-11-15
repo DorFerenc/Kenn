@@ -5,9 +5,9 @@ with RLS, the service layer that is the only thing allowed to touch Postgres,
 email sign-in, the onboarding wizard, Today, the Checklist, realtime sync, and
 Playwright arriving with tests that run.
 
-**Outcome:** done. 350 unit tests (307 → 350), 76 pgTAP assertions (30 → 76),
-21 Playwright tests where there were none, `pnpm check:twice` stable across 223
-files. Step 5 is now 5a (done) and 5b (Google OAuth, real MFA, `deploy.yml`,
+**Outcome:** done, and then substantially hardened by the two reviews. 364 unit
+tests (from 307), 94 pgTAP assertions (from 30), 24 Playwright tests where there
+were none, `pnpm check:twice` stable.
 the production deploy, the PWA on both phones).
 
 ## The find of the session came from a browser, and nothing else could have found it
@@ -138,15 +138,75 @@ precondition would have turned four hours into forty minutes.
   build environment ships. The same reasoning as ADR-0002: the latest version
   the toolchain supports, where the toolchain includes the machine.
 
+## The reviews found more than the build did, and in one direction
+
+Both agents found the same class of thing, and it is not the class I was looking
+for: **a guarantee that is true of `apps/web` and false of the database.**
+
+The security review's central observation is one sentence and invalidates
+several of mine: the publishable key is public by design and
+`[api] schemas = ["public"]` exposes every table through PostgREST, so a
+signed-in member holds a general-purpose SQL client against their own
+household. One `curl` is as much a request path as a server action. Every policy
+I wrote was `for all`, which is correct about _which household_ and silent about
+_which operation_. Verified against the local stack before fixing anything:
+
+- `DELETE /rest/v1/household?id=eq.<mine>` succeeded, and the cascade took every
+  `audit_log` row with it. "Append-only", asserted in a pgTAP file and written
+  into an ADR, was a property of the service layer. **A cascade is not subject
+  to the referencing table's RLS**, so four assertions about `update` and
+  `delete` on `audit_log` could not see it.
+- `DELETE /rest/v1/task_state?...` erased a decision ADR-0008 calls "structural
+  rather than conventional".
+- `DELETE /rest/v1/member?user_id=eq.<the other parent>` evicted the other
+  parent from their own pregnancy, silently and permanently.
+
+My pgTAP files asked "can household A reach household B?" eight times and never
+once asked "what can a member do to their own household?". That is the whole
+finding, and it is Rules-learned #1 again: ask what the gate cannot see.
+
+The code review's Critical came from driving the app rather than reading it:
+nothing stops a person being a member of two households, and five reads assumed
+one. A parent who onboarded their own household and then accepted a partner's
+invite saw the partner's pregnancy on Today, their own record unreachable, and
+three members listed in a two-person household. **My first fix was wrong in a
+way worth recording**: I added `order('created_at')` to the household query,
+which is deterministic and picks the _partner's_ household, because a partner's
+household can easily be the older one. The reviewer caught that too. The real
+fix was to resolve the membership and scope every read by its household id.
+
+Two more worth keeping:
+
+- **A gate I wrote this same session was already decoration.**
+  `check-prerender.mjs` enumerated six household segment names, so step 8a's
+  `things` and step 11's `coach` would have been invisible to it while it
+  reported "none of them a household route". It is now an allowlist of what
+  _may_ be prerendered, which fails on a new route until someone declares it
+  public.
+- **The fake Supabase client ignored `.eq()`**, so a query with the household
+  filter and one without were indistinguishable to every unit test. That is
+  precisely why the Critical had to be found in a browser. A fake that does not
+  honour the filters the real client applies cannot test the thing most worth
+  testing.
+
+And one finding that was neither a bug nor a test error but an omission nobody
+would have noticed for months: `preg.anti-d` is the only `applies_if` condition
+in the entire KB — critical, guideline-level, for Rh-negative women — and the
+wizard never asked. The unit test proved the engine honours an answer no screen
+could give.
+
 ## Rule candidates
 
-| Candidate                                                                  | Automatable?            | Status                                                                                                                                                                                             |
-| -------------------------------------------------------------------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| "A test fixture fails at its own precondition, never three locators later" | partly                  | first occurrence — proposed as a line in `review-code`                                                                                                                                             |
-| "A string replacement asserts its anchor matched"                          | yes, for my own tooling | first occurrence — stays here; the formatter reflows anchors, so prefer line-anchored edits                                                                                                        |
-| "Check `git diff --cached` before committing; the index has history"       | yes                     | **second occurrence** (step 2 was `git add -A`) — earns a hook: refuse a commit staging paths outside the message's scope is too clever, so propose a `pre-commit` listing of staged paths instead |
-| "Ask what a gate cannot see"                                               | no                      | **second occurrence** (step 2's colour scan) — promote to `review-code`                                                                                                                            |
-| "A browser-driven test is a different instrument, not a slower unit test"  | no                      | first occurrence — proposed for `implement-step` phase 4                                                                                                                                           |
+| Candidate                                                                  | Automatable?            | Status                                                                                                                                                                                                                          |
+| -------------------------------------------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "A test fixture fails at its own precondition, never three locators later" | partly                  | first occurrence — proposed as a line in `review-code`                                                                                                                                                                          |
+| "A string replacement asserts its anchor matched"                          | yes, for my own tooling | first occurrence — stays here; the formatter reflows anchors, so prefer line-anchored edits                                                                                                                                     |
+| "Check `git diff --cached` before committing; the index has history"       | yes                     | **second occurrence** (step 2 was `git add -A`) — earns a hook: refuse a commit staging paths outside the message's scope is too clever, so propose a `pre-commit` listing of staged paths instead                              |
+| "Ask what a gate cannot see"                                               | no                      | **third occurrence** (step 2's colour scan, this step's i18n scan, and `check-prerender`) — promoted to CLAUDE.md and `/review-code`, with the mechanical form: a gate that enumerates what it protects derives the enumeration |
+| "A guarantee is only as strong as the layer that enforces it"              | partly                  | first occurrence — three claims in my own ADR and comments were true of `apps/web` and false of Postgres; `/review-code` gains it                                                                                               |
+| "A fake that ignores a filter cannot test scoping"                         | yes                     | first occurrence — fixed in `fake-db.ts`, and a test smell in `/review-code`                                                                                                                                                    |
+| "A comment asserting a property the code does not implement is a finding"  | no                      | first occurrence, twice in one step (`aria-current` "comes from next-intl"; "one household per person in v1")                                                                                                                   |
+| "A browser-driven test is a different instrument, not a slower unit test"  | no                      | first occurrence — proposed for `implement-step` phase 4                                                                                                                                                                        |
 
 ## Next
 
