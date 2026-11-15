@@ -29,7 +29,16 @@ import { decideTaskAction } from './actions.ts';
 import { useTranslations } from 'next-intl';
 import { useOptimistic, startTransition } from 'react';
 
-/** Late first: the list is read top-down and the top is what gets acted on. */
+/**
+ * Late first: the list is read top-down and the top is what gets acted on.
+ *
+ * `superseded` is in the engine's `TaskStatus` union and is deliberately not
+ * here, because nothing produces it (ADR-0008): a new KB version re-derives an
+ * undecided item, and a completed one keeps the version it was completed under
+ * and carries `guidanceUpdated` instead of changing state. A group nothing can
+ * fall into is a heading nobody will ever see and two message keys nobody
+ * reviews.
+ */
 const GROUPS: TaskStatus[] = [
   'overdue',
   'closing',
@@ -37,7 +46,6 @@ const GROUPS: TaskStatus[] = [
   'upcoming',
   'done',
   'skipped',
-  'superseded',
 ];
 
 const WINDOW_BAR: Record<string, string> = {
@@ -47,7 +55,6 @@ const WINDOW_BAR: Record<string, string> = {
   overdue: 'bg-window-after',
   done: 'bg-window-inside',
   skipped: 'bg-window-before',
-  superseded: 'bg-window-before',
 };
 
 const EVIDENCE_COLOUR: Record<string, string> = {
