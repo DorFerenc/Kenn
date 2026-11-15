@@ -30,29 +30,42 @@ esac
 [ -f "$file" ] || exit 0
 cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0
 
+# Scan the SQL, not the prose about it.
+#
+# Every check below used to grep the file as written, so a migration whose
+# comments explained *why* a function elsewhere is SECURITY DEFINER was reported
+# as a SECURITY DEFINER function with no pinned search_path. A guard that fires
+# on a comment is a guard people learn to wave through, which is worse than not
+# having it — the same reasoning as the token scan in packages/ui, which strips
+# comments for exactly this reason.
+#
+# `--` to end of line and /* ... */ blocks removed; the rest is what Postgres
+# would execute.
+sql=$(sed -e 's/--.*$//' "$file" | perl -0pe 's{/\*.*?\*/}{}gs' 2>/dev/null || sed -e 's/--.*$//' "$file")
+
 missing=()
 
 # 1. A new table needs RLS and a policy with both using and with check.
-if grep -Eiq 'create[[:space:]]+table' "$file"; then
-  grep -Eiq 'enable[[:space:]]+row[[:space:]]+level[[:space:]]+security' "$file" \
+if printf '%s' "$sql" | grep -Eiq 'create[[:space:]]+table'; then
+  printf '%s' "$sql" | grep -Eiq 'enable[[:space:]]+row[[:space:]]+level[[:space:]]+security' \
     || missing+=("RLS is not enabled in this migration (alter table ... enable row level security)")
-  grep -Eiq 'create[[:space:]]+policy' "$file" \
+  printf '%s' "$sql" | grep -Eiq 'create[[:space:]]+policy' \
     || missing+=("no policy created — RLS enabled without a policy denies everything")
-  if grep -Eiq 'create[[:space:]]+policy' "$file"; then
-    grep -Eiq 'with[[:space:]]+check' "$file" \
+  if printf '%s' "$sql" | grep -Eiq 'create[[:space:]]+policy'; then
+    printf '%s' "$sql" | grep -Eiq 'with[[:space:]]+check' \
       || missing+=("policy has no 'with check' — 'using' alone lets a member write into another household")
   fi
 fi
 
 # 2. A security definer function must pin search_path.
-if grep -Eiq 'security[[:space:]]+definer' "$file" \
-   && ! grep -Eiq 'set[[:space:]]+search_path' "$file"; then
+if printf '%s' "$sql" | grep -Eiq 'security[[:space:]]+definer' \
+   && ! printf '%s' "$sql" | grep -Eiq 'set[[:space:]]+search_path'; then
   missing+=("security definer function without 'set search_path = public' — that is a privilege-escalation path")
 fi
 
 # 3. A new table needs a pgTAP test somewhere in the tree.
-if grep -Eiq 'create[[:space:]]+table' "$file"; then
-  tables=$(grep -Eio 'create[[:space:]]+table[[:space:]]+(if[[:space:]]+not[[:space:]]+exists[[:space:]]+)?[a-z0-9_."]+' "$file" \
+if printf '%s' "$sql" | grep -Eiq 'create[[:space:]]+table'; then
+  tables=$(printf '%s' "$sql" | grep -Eio 'create[[:space:]]+table[[:space:]]+(if[[:space:]]+not[[:space:]]+exists[[:space:]]+)?[a-z0-9_."]+' \
     | awk '{print $NF}' | tr -d '"' | sed 's/^public\.//')
   for t in $tables; do
     if ! grep -rqi "$t" packages/db/supabase/tests/ 2>/dev/null; then
