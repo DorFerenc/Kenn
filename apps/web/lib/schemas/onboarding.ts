@@ -35,6 +35,17 @@ export function onboardingSchema(today: IsoDate) {
       fetuses: z.coerce.number().int().min(1).max(4),
 
       firstborn: z.boolean().optional(),
+      /**
+       * Tri-state, and the only `applies_if` condition today's KB actually
+       * uses: `preg.anti-d` is a critical, guideline-level item that applies to
+       * Rh-negative women, and nothing asked — so it could never reach anyone.
+       * Found by the review of step 5a reading the KB against the wizard.
+       *
+       * "Not known" has to stay distinct from "no", because `appliesTo()`
+       * treats an unanswered condition as not matching, which is the right
+       * behaviour only if the absence is real.
+       */
+      rhNegative: z.enum(['yes', 'no']).optional(),
       customs: z.enum(['jewish', 'muslim', 'christian', 'druze', 'none']).optional(),
       healthFund: z.enum(['clalit', 'maccabi', 'meuhedet', 'leumit']).optional(),
       hasSupplementary: z.boolean().optional(),

@@ -12,12 +12,15 @@
     "signOut": "Sign out",
     "back": "Back",
     "notSaid": "Not said",
-    "loading": "One moment…"
+    "loading": "One moment…",
+    "yes": "Yes",
+    "no": "No"
   },
   "nav": {
     "today": "Today",
     "checklist": "Checklist",
-    "household": "Household"
+    "household": "Household",
+    "label": "Sections"
   },
   "auth": {
     "signInTitle": "Sign in to Kenn",
@@ -63,7 +66,8 @@
       "ivf_transfer": "From an IVF transfer",
       "lmpDate": "First day of the last period",
       "eddDate": "Estimated due date",
-      "transferDate": "Transfer date"
+      "transferDate": "Transfer date",
+      "transferHelp": "We assume a day-5 transfer. For a day-3 transfer the dates run two days early — check them against your clinic."
     },
     "fetuses": {
       "question": "How many babies?",
@@ -75,7 +79,9 @@
       "firstborn": "This is the first child",
       "customs": "Tradition",
       "healthFund": "Health fund",
-      "supplementary": "We have supplementary insurance"
+      "supplementary": "We have supplementary insurance",
+      "rh": "Rh-negative blood type",
+      "rhHelp": "Decides whether the antibody screen and anti-D appear. If you do not know, leave it on “Not said”."
     },
     "customs": {
       "jewish": "Jewish",
@@ -135,7 +141,8 @@
       "private": "Private",
       "otc": "Over the counter",
       "free": "Free"
-    }
+    },
+    "saveFailed": "That change was not saved. Try again."
   },
   "window": {
     "before": "Opens {date}",
@@ -179,7 +186,8 @@
     "body": "This invitation joins you to one household with one checklist.",
     "accept": "Join",
     "signInFirst": "You need an account to join. We will come back here after you sign in.",
-    "invalid": "This link is not valid — it may have expired, been revoked, or already been used."
+    "invalid": "This link is not valid — it may have expired, been revoked, or already been used.",
+    "taken": "This account already belongs to a household. In this version you can be in one household only."
   },
   "errors": {
     "notFoundTitle": "Page not found",

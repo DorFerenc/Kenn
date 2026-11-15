@@ -1,5 +1,6 @@
 import { isLocale } from '@kenn/ui';
 import { CredentialsForm } from '@/app/[locale]/sign-in/credentials-form.tsx';
+import { safeNext } from '@/lib/safe-next.ts';
 import { userContext } from '@/lib/services/context.ts';
 import { notFound, redirect } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
@@ -20,9 +21,12 @@ export default async function SignInPage({
 
   const { next, mode } = await searchParams;
 
-  // Already signed in: nothing to do here.
+  // Already signed in: nothing to do here. `next` comes from a query string,
+  // so it goes through the same guard the server action uses — redirecting to
+  // it raw turned a real link on the real domain into a way to hand a
+  // signed-in parent to a copy of this page.
   const ctx = await userContext();
-  if (ctx) redirect(next ?? `/${locale}`);
+  if (ctx) redirect(safeNext(next, locale));
 
   const t = await getTranslations('auth');
 

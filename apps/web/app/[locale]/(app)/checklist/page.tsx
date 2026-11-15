@@ -2,7 +2,7 @@ import { isLocale } from '@kenn/ui';
 import { RealtimeTasks } from '@/app/[locale]/(app)/realtime-tasks.tsx';
 import { TaskList } from '@/app/[locale]/(app)/task-list.tsx';
 import { requireUserContext } from '@/lib/services/context.ts';
-import { currentHousehold, currentMember } from '@/lib/services/household.ts';
+import { currentHouseholdAndMember } from '@/lib/services/household.ts';
 import { listTasks } from '@/lib/services/tasks.ts';
 import { todayInIsrael } from '@/lib/today.ts';
 import { notFound } from 'next/navigation';
@@ -23,12 +23,11 @@ export default async function ChecklistPage({
   const t = await getTranslations();
   const ctx = await requireUserContext();
 
-  const [household, member, tasks] = await Promise.all([
-    currentHousehold(ctx),
-    currentMember(ctx),
-    listTasks(ctx, todayInIsrael()),
-  ]);
-  if (!household || !member) notFound();
+  const current = await currentHouseholdAndMember(ctx);
+  if (!current) notFound();
+  const { household, member } = current;
+
+  const tasks = await listTasks(ctx, household.id, todayInIsrael());
 
   return (
     <main className="flex flex-col gap-4">

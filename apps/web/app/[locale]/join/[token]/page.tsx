@@ -21,17 +21,27 @@ export default async function JoinPage({
 
   const t = await getTranslations('join');
 
+  // `/join/invalid` and `/join/taken` are the two places the action redirects
+  // to, and they arrive here as the token segment — so they are answers, not
+  // tokens, and each gets its own sentence.
+  const outcome = token === 'invalid' || token === 'taken' ? token : null;
+
   // Shape first, so a junk path never reaches accept_invite() — and so the
   // reader is told the same thing whether the link was malformed or simply
-  // wrong. Which of the two it was is a fact about a household they are not
-  // in.
-  const wellFormed = inviteTokenSchema.safeParse(token).success;
+  // wrong. Which of the two it was is a fact about a household they are not in.
+  const wellFormed = outcome === null && inviteTokenSchema.safeParse(token).success;
 
   const ctx = await userContext();
   if (!ctx) {
-    // Sign in, then come back here. The token stays in the path, which is why
+    // Sign in, then come back here — but only carry a token that is the right
+    // shape, so nothing arbitrary from the URL is reflected into a query
+    // string. The token stays in the path either way, which is why
     // Referrer-Policy is set in next.config.ts.
-    redirect(`/${locale}/sign-in?next=/${locale}/join/${token}`);
+    redirect(
+      wellFormed
+        ? `/${locale}/sign-in?next=/${locale}/join/${token}`
+        : `/${locale}/sign-in`,
+    );
   }
 
   return (
@@ -41,7 +51,11 @@ export default async function JoinPage({
         <p className="text-text-muted">{t('body')}</p>
       </header>
 
-      {wellFormed ? (
+      {outcome ? (
+        <p role="alert" className="text-evidence-weak font-medium">
+          {t(outcome)}
+        </p>
+      ) : wellFormed ? (
         <form action={acceptInviteAction} className="flex flex-col gap-2">
           <input type="hidden" name="locale" value={locale} />
           <input type="hidden" name="token" value={token} />

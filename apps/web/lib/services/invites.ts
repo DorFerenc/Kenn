@@ -15,7 +15,7 @@
 
 import { timestampInDays, nowTimestamp } from '../today.ts';
 import { recordAudit } from './audit.ts';
-import type { ServiceContext } from './context.ts';
+import { assertHuman, type ServiceContext } from './context.ts';
 
 const INVITE_DAYS = 7;
 
@@ -44,6 +44,8 @@ export async function createInvite(
   householdId: string,
   email: string,
 ): Promise<CreatedInvite> {
+  // Sharing is a person's decision, never an AI client's (hard rule 5).
+  assertHuman(ctx, 'creating an invite');
   if (!ctx.actor.userId) throw new Error('createInvite needs a signed-in user');
 
   const token =
@@ -76,10 +78,14 @@ export async function createInvite(
   return { id: data.id, token };
 }
 
-export async function listInvites(ctx: ServiceContext): Promise<Invite[]> {
+export async function listInvites(
+  ctx: ServiceContext,
+  householdId: string,
+): Promise<Invite[]> {
   const { data, error } = await ctx.db
     .from('invite')
     .select('id, email, expires_at, accepted_at, revoked_at')
+    .eq('household_id', householdId)
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(`invite list failed: ${error.message}`);
@@ -98,12 +104,21 @@ export async function revokeInvite(
   householdId: string,
   inviteId: string,
 ): Promise<void> {
-  const { error } = await ctx.db
+  assertHuman(ctx, 'revoking an invite');
+
+  // Filtered by household as well as by id, and the affected rows are read
+  // back. RLS makes a write aimed at another household a no-op, and a no-op
+  // returns no error — so without this the audit log would record a revocation
+  // that never happened, and the parent would be told a live link was dead.
+  const { data, error } = await ctx.db
     .from('invite')
     .update({ revoked_at: nowTimestamp() })
-    .eq('id', inviteId);
+    .eq('id', inviteId)
+    .eq('household_id', householdId)
+    .select('id');
 
   if (error) throw new Error(`invite revoke failed: ${error.message}`);
+  if (!data || data.length === 0) throw new Error('invite revoke affected no rows');
 
   await recordAudit(ctx, householdId, {
     action: 'invite.revoke',
@@ -113,24 +128,42 @@ export async function revokeInvite(
 }
 
 /**
- * Redeem a raw token. Returns the household joined, or null when the token is
- * unknown, expired, revoked or already used — all four decided in SQL, and all
- * four reported to the reader as one thing, because telling them which is
- * telling them about a household they are not in.
+ * Redeem a raw token.
+ *
+ * Returns the household joined, or why not. Every check happens inside
+ * `accept_invite()` in SQL, because the invitee is not a member yet and cannot
+ * even see the invite row — so this function cannot widen the window, only
+ * report the outcome.
+ *
+ * The four token failures collapse into one answer on purpose: which of them it
+ * was is a fact about a household the reader is not in. "You already have a
+ * household" is different — that is a fact about the reader, and telling them
+ * is the difference between a dead end and an explanation.
  */
+export type AcceptResult =
+  { joined: string } | { refused: 'invalid' | 'alreadyInAHousehold' };
+
+/** The errcode `accept_invite()` raises for a second household. */
+const ALREADY_IN_A_HOUSEHOLD = '23505';
+
 export async function acceptInvite(
   ctx: ServiceContext,
   token: string,
-): Promise<{ householdId: string } | null> {
+): Promise<AcceptResult> {
   const { data, error } = await ctx.db.rpc('accept_invite', { p_token: token });
-  if (error) return null;
 
-  const householdId = data as unknown as string;
+  if (error) {
+    return {
+      refused: error.code === ALREADY_IN_A_HOUSEHOLD ? 'alreadyInAHousehold' : 'invalid',
+    };
+  }
+
+  const householdId = data;
   await recordAudit(ctx, householdId, {
     action: 'invite.accept',
     entity: 'member',
     entityId: ctx.actor.userId,
   });
 
-  return { householdId };
+  return { joined: householdId };
 }

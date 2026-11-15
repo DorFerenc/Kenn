@@ -32,7 +32,11 @@ export function newEmail(prefix = 'parent'): string {
   return `${prefix}-${crypto.randomUUID().slice(0, 12)}@kenn.test`;
 }
 
-const PASSWORD = 'correct-horse-battery';
+// Letters and digits, because `password_requirements = "letters_digits"` in
+// packages/db/supabase/config.toml refuses anything less — the suite is the
+// first thing that notices when the password policy tightens, which is the
+// right place to notice it.
+const PASSWORD = 'correct-horse-battery-7';
 
 export async function signUp(
   page: Page,

@@ -2,11 +2,7 @@ import { isLocale } from '@kenn/ui';
 import { InviteForm } from '@/app/[locale]/(app)/household/invite-form.tsx';
 import { revokeInviteAction } from '@/app/[locale]/(app)/actions.ts';
 import { requireUserContext } from '@/lib/services/context.ts';
-import {
-  currentHousehold,
-  currentMember,
-  householdMembers,
-} from '@/lib/services/household.ts';
+import { currentHouseholdAndMember, householdMembers } from '@/lib/services/household.ts';
 import { listInvites } from '@/lib/services/invites.ts';
 import { genderValues } from '@/i18n/gender.ts';
 import { notFound } from 'next/navigation';
@@ -27,13 +23,14 @@ export default async function HouseholdPage({
   const t = await getTranslations('household');
   const ctx = await requireUserContext();
 
-  const [household, me, members, invites] = await Promise.all([
-    currentHousehold(ctx),
-    currentMember(ctx),
-    householdMembers(ctx),
-    listInvites(ctx),
+  const current = await currentHouseholdAndMember(ctx);
+  if (!current) notFound();
+  const { household, member: me } = current;
+
+  const [members, invites] = await Promise.all([
+    householdMembers(ctx, household.id),
+    listInvites(ctx, household.id),
   ]);
-  if (!household || !me) notFound();
 
   const open = invites.filter((invite) => !invite.acceptedAt && !invite.revokedAt);
 

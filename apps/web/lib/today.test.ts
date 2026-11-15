@@ -56,6 +56,14 @@ const CLOCK_PATTERNS = [
   { pattern: /Date\.now\(/, why: 'reads the clock' },
   { pattern: /24 \* 60 \* 60/, why: 'computes a day in milliseconds' },
   { pattern: /86[_,]?400[_,]?000/, why: 'computes a day in milliseconds' },
+  // Two the review of step 5a found the scan blind to. Both read or parse a
+  // clock while passing every pattern above, which is the failure mode this
+  // whole file exists to prevent — a scan that covers less than it claims.
+  { pattern: /Date\.parse\(/, why: 'parses a date outside the engine' },
+  {
+    pattern: /\.format\(\s*\)/,
+    why: 'formats the current instant: Intl#format() with no argument',
+  },
 ];
 
 /** The one module allowed to know what time it is, and this test. */
@@ -130,6 +138,28 @@ describe('only one module in apps/web reads a clock', () => {
         },
       ]).map((o) => o.why),
     ).toEqual(['computes a day in milliseconds']);
+  });
+
+  it('catches Date.parse, which reads nothing but still dates things itself', () => {
+    expect(
+      clockReaders([
+        {
+          path: 'apps/web/lib/services/tasks.ts',
+          text: "const t = Date.parse('2027-01-01');",
+        },
+      ]).map((o) => o.why),
+    ).toEqual(['parses a date outside the engine']);
+  });
+
+  it('catches Intl#format() called with no argument, which formats now', () => {
+    expect(
+      clockReaders([
+        {
+          path: 'apps/web/app/[locale]/(app)/today/page.tsx',
+          text: 'const s = formatter.format();',
+        },
+      ]).map((o) => o.why),
+    ).toEqual(['formats the current instant: Intl#format() with no argument']);
   });
 
   it('does not fire on prose that merely mentions one', () => {

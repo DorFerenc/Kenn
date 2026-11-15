@@ -91,7 +91,14 @@ export function Wizard({ locale }: { locale: string }) {
           <span className="font-medium">{t('household.label')}</span>
           <input
             name="householdName"
-            required
+            // Only while this step is on screen. A `required` control inside a
+            // `display: none` fieldset is not focusable, so the browser blocks
+            // the submit and reports "An invalid form control is not focusable"
+            // to the console and nothing to the parent: the Finish button on
+            // step 4 simply did nothing, for anyone who left the name blank.
+            // The date field on step 2 already had this guard; this one was
+            // missed, and the review of step 5a found it by clicking.
+            required={step === 1}
             maxLength={80}
             className="border-border bg-surface-raised min-h-(--size-tap) rounded-md border px-2"
           />
@@ -119,6 +126,14 @@ export function Wizard({ locale }: { locale: string }) {
 
         <label className="mt-2 flex flex-col gap-1">
           <span className="font-medium">{dateField.label}</span>
+          {/* The engine dates an IVF transfer as a day-5 blastocyst (19 days
+              after the notional LMP; a day-3 embryo is 17). Asking which is a
+              column and a migration, and until then the assumption is said out
+              loud rather than left in the engine's source — two days can move
+              the edge of the NT window. Raised by the review of step 5a. */}
+          {datingMethod === 'ivf_transfer' ? (
+            <span className="text-text-muted text-sm">{t('dating.transferHelp')}</span>
+          ) : null}
           {/* One input, renamed with the method, so only the date the chosen
               method is named after is ever submitted. */}
           <input
@@ -159,6 +174,23 @@ export function Wizard({ locale }: { locale: string }) {
         <label className="flex min-h-(--size-tap) items-center gap-2">
           <input type="checkbox" name="firstborn" />
           <span>{t('profile.firstborn')}</span>
+        </label>
+
+        <label className="flex flex-col gap-1">
+          <span className="font-medium">{t('profile.rh')}</span>
+          <select
+            name="rhNegative"
+            defaultValue=""
+            className="border-border bg-surface-raised min-h-(--size-tap) rounded-md border px-2"
+          >
+            {/* "Not said" first and selected, because an unanswered condition
+                does not match and a guess here would show an anti-D item to
+                someone who does not need it. */}
+            <option value="">{common('notSaid')}</option>
+            <option value="yes">{common('yes')}</option>
+            <option value="no">{common('no')}</option>
+          </select>
+          <span className="text-text-muted text-sm">{t('profile.rhHelp')}</span>
         </label>
 
         <label className="flex flex-col gap-1">
@@ -231,7 +263,22 @@ export function Wizard({ locale }: { locale: string }) {
           <button
             key="next"
             type="button"
-            onClick={() => setStep((current) => current + 1)}
+            onClick={(event) => {
+              // Validate the step the reader is on, where its fields are
+              // visible, instead of letting them reach step 4 and meet a
+              // button that cannot submit.
+              const form = event.currentTarget.form;
+              const fields = form?.querySelectorAll<HTMLInputElement>(
+                'fieldset:not(.hidden) :is(input,select)',
+              );
+              for (const field of fields ?? []) {
+                if (!field.checkValidity()) {
+                  field.reportValidity();
+                  return;
+                }
+              }
+              setStep((current) => current + 1);
+            }}
             className="bg-accent text-on-accent min-h-(--size-tap) rounded-md px-3 font-medium"
           >
             {t('next', genderValues(genderForm))}

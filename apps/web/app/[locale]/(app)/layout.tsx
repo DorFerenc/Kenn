@@ -2,7 +2,7 @@ import { isLocale } from '@kenn/ui';
 import { TabBar } from '@/app/[locale]/(app)/tab-bar.tsx';
 import { signOutAction } from '@/app/[locale]/sign-in/actions.ts';
 import { userContext } from '@/lib/services/context.ts';
-import { currentHousehold, currentMember } from '@/lib/services/household.ts';
+import { currentHouseholdAndMember } from '@/lib/services/household.ts';
 import { notFound, redirect } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import type { ReactNode } from 'react';
@@ -35,11 +35,7 @@ export default async function AppLayout({
 
   // Signed in but not onboarded: there are no anchors, so every screen below
   // would be empty and give no reason why.
-  const [household, member] = await Promise.all([
-    currentHousehold(ctx),
-    currentMember(ctx),
-  ]);
-  if (!household || !member) redirect(`/${locale}/onboarding`);
+  if (!(await currentHouseholdAndMember(ctx))) redirect(`/${locale}/onboarding`);
 
   const t = await getTranslations('common');
 

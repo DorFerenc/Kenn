@@ -15,7 +15,7 @@ import { addDays, type IsoDate } from '@kenn/engine';
 import { publishedKbItems } from '@kenn/kb/items';
 import { describe, expect, it } from 'vitest';
 import type { ServiceContext } from './context.ts';
-import { fakeDb, HOUSEHOLD_A, USER_A, type TableResult } from './fake-db.ts';
+import { fakeDb, HOUSEHOLD_A, HOUSEHOLD_B, USER_A, type TableResult } from './fake-db.ts';
 import { decideTask, listTasks } from './tasks.ts';
 
 const TODAY = '2027-01-15' as IsoDate;
@@ -44,8 +44,17 @@ function context(world: World): { ctx: ServiceContext; db: ReturnType<typeof fak
           : world.pregnancy,
       error: null,
     },
-    household_profile: { data: world.profile ?? null, error: null },
-    task_state: { data: world.taskStates ?? [], error: null },
+    household_profile: {
+      data: world.profile ? { household_id: HOUSEHOLD_A, ...world.profile } : null,
+      error: null,
+    },
+    task_state: {
+      data: (world.taskStates ?? []).map((row) => ({
+        household_id: HOUSEHOLD_A,
+        ...row,
+      })),
+      error: null,
+    },
     audit_log: { data: null, error: null },
   };
 
@@ -62,7 +71,7 @@ function context(world: World): { ctx: ServiceContext; db: ReturnType<typeof fak
 describe('listTasks', () => {
   it('materialises the real KB against the household anchors', async () => {
     const { ctx } = context({});
-    const tasks = await listTasks(ctx, TODAY);
+    const tasks = await listTasks(ctx, HOUSEHOLD_A, TODAY);
 
     expect(tasks.length).toBeGreaterThan(5);
     // Every task carries both locales, because one parent reads Hebrew and the
@@ -75,7 +84,7 @@ describe('listTasks', () => {
 
   it('returns nothing at all before onboarding', async () => {
     const { ctx } = context({ pregnancy: null });
-    expect(await listTasks(ctx, TODAY)).toEqual([]);
+    expect(await listTasks(ctx, HOUSEHOLD_A, TODAY)).toEqual([]);
   });
 
   it('never materialises a draft item', async () => {
@@ -87,7 +96,7 @@ describe('listTasks', () => {
     expect(drafts).toEqual([]);
 
     const { ctx } = context({});
-    const ids = (await listTasks(ctx, TODAY)).map((task) => task.kbItemId);
+    const ids = (await listTasks(ctx, HOUSEHOLD_A, TODAY)).map((task) => task.kbItemId);
     expect(ids).not.toContain('preg.rsv-maternal-vaccine');
   });
 
@@ -95,11 +104,12 @@ describe('listTasks', () => {
     // preg.anti-d applies to Rh-negative women. With no answer stored it must
     // not appear: showing a test to people who do not need it trains them to
     // ignore the list (step 4's decision).
-    const unknownRh = await listTasks(context({ profile: null }).ctx, TODAY);
+    const unknownRh = await listTasks(context({ profile: null }).ctx, HOUSEHOLD_A, TODAY);
     expect(unknownRh.map((t) => t.kbItemId)).not.toContain('preg.anti-d');
 
     const rhNegative = await listTasks(
       context({ profile: { rh_negative: true } }).ctx,
+      HOUSEHOLD_A,
       TODAY,
     );
     expect(rhNegative.map((t) => t.kbItemId)).toContain('preg.anti-d');
@@ -108,7 +118,7 @@ describe('listTasks', () => {
   it('lets a decision override the clock', async () => {
     // The NT scan's window closed around day 97; at day 140 it is overdue. A
     // parent who had the scan must not be told they are late for it.
-    const open = await listTasks(context({}).ctx, TODAY);
+    const open = await listTasks(context({}).ctx, HOUSEHOLD_A, TODAY);
     const before = open.find((task) => task.kbItemId === 'preg.nt-scan');
     expect(before?.status).toBe('overdue');
 
@@ -124,6 +134,7 @@ describe('listTasks', () => {
           },
         ],
       }).ctx,
+      HOUSEHOLD_A,
       TODAY,
     );
     const done = after.find((task) => task.kbItemId === 'preg.nt-scan');
@@ -148,6 +159,7 @@ describe('listTasks', () => {
           },
         ],
       }).ctx,
+      HOUSEHOLD_A,
       TODAY,
     );
     expect(stale.find((task) => task.kbItemId === 'preg.nt-scan')?.guidanceUpdated).toBe(
@@ -166,6 +178,7 @@ describe('listTasks', () => {
           },
         ],
       }).ctx,
+      HOUSEHOLD_A,
       TODAY,
     );
     expect(
@@ -174,8 +187,78 @@ describe('listTasks', () => {
   });
 
   it('is ordered by when the window opens', async () => {
-    const starts = (await listTasks(context({}).ctx, TODAY)).map((task) => task.dueStart);
+    const starts = (await listTasks(context({}).ctx, HOUSEHOLD_A, TODAY)).map(
+      (task) => task.dueStart,
+    );
     expect([...starts].sort()).toEqual(starts);
+  });
+});
+
+describe('two households, one person', () => {
+  // The bug this guards against was found by driving a browser, not by this
+  // suite: a parent who onboarded their own household and then accepted a
+  // partner's invite saw the partner's pregnancy on Today and their own record
+  // nowhere. RLS was not wrong — such a person is a member of both — the app
+  // was treating a set as a singleton. The fake honours filters now, so the
+  // scoping is testable here.
+
+  it('reads only the household it was asked about', async () => {
+    const db = fakeDb({
+      pregnancy: {
+        data: [
+          {
+            household_id: HOUSEHOLD_B,
+            dating_method: 'lmp',
+            lmp: addDays(TODAY, -70),
+            edd: null,
+            transfer_date: null,
+            fetuses: 1,
+          },
+          {
+            household_id: HOUSEHOLD_A,
+            dating_method: 'lmp',
+            lmp: LMP,
+            edd: null,
+            transfer_date: null,
+            fetuses: 1,
+          },
+        ],
+        error: null,
+      },
+      household_profile: { data: [], error: null },
+      task_state: {
+        data: [
+          {
+            household_id: HOUSEHOLD_B,
+            kb_item_id: 'preg.nt-scan',
+            kb_version: 1,
+            state: 'done',
+            acted_by: USER_A,
+            acted_at: '2027-01-01T10:00:00Z',
+          },
+        ],
+        error: null,
+      },
+      audit_log: { data: null, error: null },
+    });
+    const ctx: ServiceContext = {
+      db: db as unknown as ServiceContext['db'],
+      actor: { kind: 'user', userId: USER_A },
+    };
+
+    const tasks = await listTasks(ctx, HOUSEHOLD_A, TODAY);
+
+    // Household B's decision must not appear on household A's checklist, even
+    // though both rows are about the same KB item.
+    const ntScan = tasks.find((task) => task.kbItemId === 'preg.nt-scan');
+    expect(ntScan?.decision).toBeNull();
+
+    // Every read carried the household filter.
+    for (const call of db.calls.filter((c) => c.operation === 'select')) {
+      expect(call.filters).toEqual(
+        expect.arrayContaining([['household_id', HOUSEHOLD_A]]),
+      );
+    }
   });
 });
 

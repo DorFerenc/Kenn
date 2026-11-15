@@ -24,13 +24,19 @@ export type ProfileWrite = Pick<
   | 'feeding_intent'
 >;
 
-export async function getProfile(ctx: ServiceContext): Promise<ProfileWrite | null> {
+export async function getProfile(
+  ctx: ServiceContext,
+  householdId: string,
+): Promise<ProfileWrite | null> {
+  // Filtered by household rather than trusting RLS to leave one row: a person
+  // can be a member of more than one household, and an unfiltered read then
+  // answers with whichever profile Postgres yields first.
   const { data, error } = await ctx.db
     .from('household_profile')
     .select(
       'firstborn, customs, health_fund, has_supplementary, rh_negative, sex, feeding_intent',
     )
-    .limit(1)
+    .eq('household_id', householdId)
     .maybeSingle();
 
   if (error) throw new Error(`profile read failed: ${error.message}`);
@@ -60,7 +66,7 @@ export async function upsertProfile(
   householdId: string,
   input: ProfileWrite,
 ): Promise<void> {
-  const before = await getProfile(ctx);
+  const before = await getProfile(ctx, householdId);
 
   const { error } = await ctx.db.from('household_profile').upsert(
     {

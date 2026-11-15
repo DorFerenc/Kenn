@@ -24,9 +24,14 @@ export async function acceptInviteAction(formData: FormData): Promise<void> {
   if (!parsed.success) redirect(`/${locale}/join/invalid`);
 
   const ctx = await requireUserContext();
-  const joined = await acceptInvite(ctx, parsed.data);
+  const result = await acceptInvite(ctx, parsed.data);
 
-  // A token that did not redeem sends the reader back to a page that says so,
-  // rather than to a household they are not in.
-  redirect(joined ? `/${locale}/today` : `/${locale}/join/invalid`);
+  if ('joined' in result) redirect(`/${locale}/today`);
+
+  // `alreadyInAHousehold` is a fact about the reader, so it gets its own page
+  // rather than being folded into "this link is not valid" — which would be
+  // true of the link and useless to them.
+  redirect(
+    `/${locale}/join/${result.refused === 'alreadyInAHousehold' ? 'taken' : 'invalid'}`,
+  );
 }

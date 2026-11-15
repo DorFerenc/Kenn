@@ -22,7 +22,7 @@ describe('check:prerender', () => {
 
   it('catches a prerendered Today page', () => {
     const manifest = { routes: { '/he': {}, '/he/today': {} } };
-    expect(offendingRoutes(manifest)).toEqual(['/he/today']);
+    expect(offendingRoutes(manifest).sort()).toEqual(['/he', '/he/today']);
   });
 
   it('catches a household route in every list the manifest keeps', () => {
@@ -38,11 +38,18 @@ describe('check:prerender', () => {
     ]);
   });
 
-  it('does not fire on a public route that merely contains the word', () => {
-    // `/he/todayish` is not `/he/today`: the check is per segment, not a
-    // substring match, or a future public page could never be named.
-    const manifest = { routes: { '/he': {}, '/he/todayish': {} } };
-    expect(offendingRoutes(manifest)).toEqual([]);
+  it('catches a route the old segment list could not have known about', () => {
+    // The point of inverting the check. `things` is step 8a, `coach` is step 11,
+    // and neither name exists anywhere in this repository yet — under the
+    // previous hand-written denylist both would have been reported clean.
+    const manifest = {
+      routes: { '/he/things': {}, '/en/coach': {}, '/he/settings': {} },
+    };
+    expect(offendingRoutes(manifest).sort()).toEqual([
+      '/en/coach',
+      '/he/settings',
+      '/he/things',
+    ]);
   });
 
   it('reads all three lists', () => {

@@ -23,11 +23,17 @@ export interface Pregnancy {
   fetuses: number;
 }
 
-export async function getPregnancy(ctx: ServiceContext): Promise<Pregnancy | null> {
+export async function getPregnancy(
+  ctx: ServiceContext,
+  householdId: string,
+): Promise<Pregnancy | null> {
+  // Filtered, not trusted to RLS returning one row: a person can be a member of
+  // more than one household, and an unfiltered read then returns whichever
+  // pregnancy Postgres yields first. See currentMember() for the bug this was.
   const { data, error } = await ctx.db
     .from('pregnancy')
     .select('household_id, dating_method, lmp, edd, transfer_date, fetuses')
-    .limit(1)
+    .eq('household_id', householdId)
     .maybeSingle();
 
   if (error) throw new Error(`pregnancy read failed: ${error.message}`);
@@ -56,7 +62,7 @@ export async function upsertPregnancy(
   householdId: string,
   input: PregnancyWrite,
 ): Promise<void> {
-  const before = await getPregnancy(ctx);
+  const before = await getPregnancy(ctx, householdId);
 
   const { error } = await ctx.db.from('pregnancy').upsert(
     {

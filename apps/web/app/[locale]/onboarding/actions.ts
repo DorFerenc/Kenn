@@ -57,6 +57,7 @@ export async function completeOnboardingAction(
     transferDate: optionalString(formData, 'transferDate'),
     fetuses: formData.get('fetuses'),
     firstborn: optionalBoolean(formData, 'firstborn'),
+    rhNegative: optionalString(formData, 'rhNegative'),
     customs: optionalString(formData, 'customs'),
     healthFund: optionalString(formData, 'healthFund'),
     hasSupplementary: optionalBoolean(formData, 'hasSupplementary'),
@@ -89,6 +90,9 @@ export async function completeOnboardingAction(
 
   await upsertProfile(ctx, householdId, {
     ...(input.firstborn === undefined ? {} : { firstborn: input.firstborn }),
+    ...(input.rhNegative === undefined
+      ? {}
+      : { rh_negative: input.rhNegative === 'yes' }),
     ...(input.customs === undefined ? {} : { customs: input.customs }),
     ...(input.healthFund === undefined ? {} : { health_fund: input.healthFund }),
     ...(input.hasSupplementary === undefined

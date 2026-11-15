@@ -25,6 +25,15 @@ export interface AuditEntry {
  * Record what just happened. Called by the service function that did it, inside
  * the same request, with the same JWT — so a write the actor was not allowed to
  * make cannot be logged as though they had made it.
+ *
+ * **It guarantees that direction only.** The state change is already committed
+ * when this runs, so a failed audit insert throws and leaves an unexplained
+ * change behind; and a write made straight to the Data API with the same JWT
+ * never reaches this function at all. Both are closed by the same thing — one
+ * `security definer` function per write, doing the change and the audit row in
+ * one transaction, with `authenticated` holding no direct insert or update
+ * privilege. That is step 9's work, before the MCP route becomes a second
+ * actor, and it is recorded in docs/decisions.md rather than implied here.
  */
 export async function recordAudit(
   ctx: ServiceContext,

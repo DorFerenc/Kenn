@@ -27,7 +27,7 @@ import { genderValues } from '@/i18n/gender.ts';
 import type { TaskView } from '@/lib/services/tasks.ts';
 import { decideTaskAction } from './actions.ts';
 import { useTranslations } from 'next-intl';
-import { useOptimistic, startTransition } from 'react';
+import { useOptimistic, useState, startTransition } from 'react';
 
 /**
  * Late first: the list is read top-down and the top is what gets acted on.
@@ -157,6 +157,7 @@ function TaskCard({
   onDecide: (decision: Decision) => void;
 }) {
   const t = useTranslations();
+  const [failed, setFailed] = useState(false);
   const text = task.locales[locale] ?? task.locales.en ?? task.locales.he;
   const decided = task.decision === 'done' || task.decision === 'skipped';
 
@@ -192,12 +193,22 @@ function TaskCard({
             // carry the URL of the page a parent was reading.
             rel="noreferrer"
             target="_blank"
-            className="underline"
+            // 48 px, like every other target: packages/ui/CLAUDE.md makes the
+            // source "one tap away" part of the shape of every item, and it
+            // was a 43×21 px inline link — measured, not guessed, by the
+            // review of step 5a.
+            className="inline-flex min-h-(--size-tap) items-center px-2 underline"
           >
             {t('tasks.source')}
           </a>
         ) : null}
       </div>
+
+      {failed ? (
+        <p role="alert" className="text-evidence-weak text-sm font-medium">
+          {t('tasks.saveFailed')}
+        </p>
+      ) : null}
 
       <div className="flex flex-wrap gap-1">
         {decided ? (
@@ -210,6 +221,7 @@ function TaskCard({
                 : t('tasks.reopen', genderValues(genderForm))
             }
             onDecide={onDecide}
+            onFailure={() => setFailed(true)}
           />
         ) : (
           <>
@@ -219,12 +231,14 @@ function TaskCard({
               label={t('tasks.markDone', genderValues(genderForm))}
               primary
               onDecide={onDecide}
+              onFailure={() => setFailed(true)}
             />
             <DecisionButton
               task={task}
               decision="skipped"
               label={t('tasks.skip', genderValues(genderForm))}
               onDecide={onDecide}
+              onFailure={() => setFailed(true)}
             />
           </>
         )}
@@ -239,20 +253,33 @@ function DecisionButton({
   label,
   primary = false,
   onDecide,
+  onFailure,
 }: {
   task: TaskView;
   decision: Decision['decision'];
   label: string;
   primary?: boolean;
   onDecide: (decision: Decision) => void;
+  onFailure: () => void;
 }) {
   return (
     <form
-      action={(formData: FormData) => {
+      // Awaited, not fired and forgotten. `void decideTaskAction(...)` left a
+      // failed write as an unhandled rejection: the optimistic tick flicked
+      // back after about 50ms and the parent was told nothing at all, which on
+      // a checklist of medical appointments is the worst available outcome.
+      action={async (formData: FormData) => {
         startTransition(() => {
           onDecide({ kbItemId: task.kbItemId, decision });
         });
-        void decideTaskAction(formData);
+        try {
+          await decideTaskAction(formData);
+        } catch (error) {
+          // A redirect or a revalidation throws by design in Next.js; only a
+          // real failure should surface.
+          if (error instanceof Error && error.message.includes('NEXT_')) throw error;
+          onFailure();
+        }
       }}
     >
       <input type="hidden" name="kbItemId" value={task.kbItemId} />

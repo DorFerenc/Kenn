@@ -11,7 +11,10 @@ import { anchorsFromPregnancy, type Anchors } from '@kenn/engine';
 import type { ServiceContext } from './context.ts';
 import { getPregnancy, pregnancyInput } from './pregnancy.ts';
 
-export async function anchorsOf(ctx: ServiceContext): Promise<Anchors> {
-  const pregnancy = await getPregnancy(ctx);
+export async function anchorsOf(
+  ctx: ServiceContext,
+  householdId: string,
+): Promise<Anchors> {
+  const pregnancy = await getPregnancy(ctx, householdId);
   return pregnancy ? anchorsFromPregnancy(pregnancyInput(pregnancy)) : {};
 }

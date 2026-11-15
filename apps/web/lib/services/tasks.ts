@@ -83,12 +83,13 @@ function scheduleInputs(items: KbItem[]): ScheduleInput[] {
  */
 export async function listTasks(
   ctx: ServiceContext,
+  householdId: string,
   today: IsoDate,
 ): Promise<TaskView[]> {
   const [pregnancy, profile, states] = await Promise.all([
-    getPregnancy(ctx),
-    getProfile(ctx),
-    taskStates(ctx),
+    getPregnancy(ctx, householdId),
+    getProfile(ctx, householdId),
+    taskStates(ctx, householdId),
   ]);
 
   if (!pregnancy) return [];
@@ -151,10 +152,16 @@ interface StoredDecision {
   kbVersion: number;
 }
 
-async function taskStates(ctx: ServiceContext): Promise<Map<string, StoredDecision>> {
+async function taskStates(
+  ctx: ServiceContext,
+  householdId: string,
+): Promise<Map<string, StoredDecision>> {
+  // Keyed by kb_item_id alone, so an unfiltered read would let one household's
+  // decision land on another household's checklist for the same item.
   const { data, error } = await ctx.db
     .from('task_state')
-    .select('kb_item_id, kb_version, state, acted_by, acted_at');
+    .select('kb_item_id, kb_version, state, acted_by, acted_at')
+    .eq('household_id', householdId);
 
   if (error) throw new Error(`task_state read failed: ${error.message}`);
 
@@ -193,7 +200,7 @@ export async function decideTask(
   const item = publishedKbItems.find((candidate) => candidate.id === kbItemId);
   if (!item) throw new Error(`unknown KB item: ${kbItemId}`);
 
-  const before = (await taskStates(ctx)).get(kbItemId) ?? null;
+  const before = (await taskStates(ctx, householdId)).get(kbItemId) ?? null;
 
   const { error } = await ctx.db.from('task_state').upsert(
     {

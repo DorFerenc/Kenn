@@ -63,6 +63,83 @@ test('the wizard addresses a Hebrew reader by the gender form they chose', async
   await expect(page.getByRole('button', { name: 'סמני כבוצע' }).first()).toBeVisible();
 });
 
+test('the wizard will not advance past a nameless household', async ({ page }) => {
+  // The Finish button on step 4 used to be silently dead for anyone who left
+  // the name blank: `required` on a `display: none` field is not focusable, so
+  // the browser refused the submit and said so only in the console. The fix
+  // validates the step the reader is on, where the field is visible.
+  await signUp(page, newEmail());
+  await page.goto('/he/onboarding');
+  await page.getByRole('radio', { name: labels.he.gender.feminine }).check();
+
+  // No name typed. Next must not move.
+  await page.getByRole('button', { name: labels.he.next }).click();
+  await expect(page.getByText(labels.he.step(1))).toBeVisible();
+
+  await page.getByLabel(labels.he.householdName).fill('E2E household');
+  await page.getByRole('button', { name: labels.he.next }).click();
+  await expect(page.getByText(labels.he.step(2))).toBeVisible();
+});
+
+test('the tab bar says which tab you are on', async ({ page }) => {
+  // Three identical links is what this looked like before: no aria-current and
+  // no visual state, so neither a screen reader nor an eye could tell.
+  const today = todayInIsrael();
+  await signUp(page, newEmail());
+  await onboard(page, { lmp: lmpForWeeks(today, WEEKS_PREGNANT) });
+
+  await expect(page.getByRole('link', { name: 'היום' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await expect(page.getByRole('link', { name: 'הרשימה' })).not.toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+
+  await page.getByRole('link', { name: 'הרשימה' }).click();
+  await expect(page).toHaveURL(/\/he\/checklist$/);
+  await expect(page.getByRole('link', { name: 'הרשימה' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await expect(page.getByRole('link', { name: 'היום' })).not.toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+
+  // And the navigation landmark is not named after one of its own items.
+  await expect(page.getByRole('navigation', { name: 'ניווט' })).toBeVisible();
+});
+
+test('every tap target on the checklist is at least 48 px tall', async ({ page }) => {
+  // packages/ui/CLAUDE.md: "48 px minimum tap target. The app is used with one
+  // thumb at 3 a.m." The evidence source link was a 43x21 px inline anchor,
+  // which no scan for physical CSS properties could have seen — only a measured
+  // box in a real browser.
+  const today = todayInIsrael();
+  await signUp(page, newEmail());
+  await onboard(page, { lmp: lmpForWeeks(today, WEEKS_PREGNANT) });
+  await page.goto('/he/checklist');
+
+  const targets = page.locator('main li :is(button, a)');
+  const count = await targets.count();
+  expect(count).toBeGreaterThan(3);
+
+  const tooSmall: { text: string; height: number }[] = [];
+  for (let i = 0; i < count; i += 1) {
+    const target = targets.nth(i);
+    const box = await target.boundingBox();
+    if (box && box.height < 48) {
+      tooSmall.push({
+        text: (await target.textContent())?.trim() ?? '',
+        height: box.height,
+      });
+    }
+  }
+  expect(tooSmall).toEqual([]);
+});
+
 test('a household cannot be onboarded twice', async ({ page }) => {
   const today = todayInIsrael();
   await signUp(page, newEmail());

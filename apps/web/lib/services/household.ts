@@ -12,7 +12,7 @@
 
 import { resolveGenderForm, resolveLocale, type GenderForm, type Locale } from '@kenn/ui';
 import { recordAudit } from './audit.ts';
-import type { ServiceContext } from './context.ts';
+import { assertHuman, type ServiceContext } from './context.ts';
 
 export interface Member {
   householdId: string;
@@ -31,17 +31,52 @@ export interface Household {
 }
 
 /**
- * The household the signed-in user belongs to, or null before onboarding.
+ * The signed-in user's own membership: which household, and how to address them.
  *
- * One household per person in v1. RLS already limits the rows to theirs, so
- * this is not a `where` clause the app has to remember — which is the point of
- * putting the boundary in the database.
+ * This is the one query that resolves "the household", and everything else
+ * takes the id from it. The reason is a bug the review of step 5a found by
+ * driving the app: nothing stops a person being a member of two households —
+ * `member`'s key is `(household_id, user_id)` and, until this step,
+ * `accept_invite()` would happily add a second — and every read here assumed
+ * exactly one. A parent who onboarded their own household and then accepted a
+ * partner's invite saw the partner's pregnancy on Today, their own record
+ * unreachable, and three members in a two-person household.
+ *
+ * RLS is not what was wrong: such a person is a legitimate member of both. The
+ * app was treating a set as a singleton. `accept_invite()` now refuses a second
+ * household (migration `20261115…_one_household_per_person`), and the reads are
+ * scoped by the id this function returns, which is the half that stays correct
+ * when step 15 adds a second household on purpose.
+ *
+ * Ordered by the **membership's** `created_at`, not the household's: the
+ * question is which household this person joined first, and a partner's
+ * household can easily be older than their own.
  */
+async function currentMember(ctx: ServiceContext): Promise<Member | null> {
+  if (!ctx.actor.userId) return null;
+
+  const { data, error } = await ctx.db
+    .from('member')
+    .select('household_id, user_id, role, locale, gender_form')
+    .eq('user_id', ctx.actor.userId)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw new Error(`member read failed: ${error.message}`);
+  if (!data) return null;
+  return toMember(data);
+}
+
+/** The household the signed-in user belongs to, or null before onboarding. */
 export async function currentHousehold(ctx: ServiceContext): Promise<Household | null> {
+  const member = await currentMember(ctx);
+  if (!member) return null;
+
   const { data, error } = await ctx.db
     .from('household')
     .select('id, name, country, default_locale')
-    .limit(1)
+    .eq('id', member.householdId)
     .maybeSingle();
 
   if (error) throw new Error(`household read failed: ${error.message}`);
@@ -55,27 +90,15 @@ export async function currentHousehold(ctx: ServiceContext): Promise<Household |
   };
 }
 
-/** The signed-in user's own membership row: their language and gender form. */
-export async function currentMember(ctx: ServiceContext): Promise<Member | null> {
-  if (!ctx.actor.userId) return null;
-
+/** Everyone in one household, so Today can say who ticked what. */
+export async function householdMembers(
+  ctx: ServiceContext,
+  householdId: string,
+): Promise<Member[]> {
   const { data, error } = await ctx.db
     .from('member')
     .select('household_id, user_id, role, locale, gender_form')
-    .eq('user_id', ctx.actor.userId)
-    .limit(1)
-    .maybeSingle();
-
-  if (error) throw new Error(`member read failed: ${error.message}`);
-  if (!data) return null;
-  return toMember(data);
-}
-
-/** Everyone in the household, so Today can say who ticked what. */
-export async function householdMembers(ctx: ServiceContext): Promise<Member[]> {
-  const { data, error } = await ctx.db
-    .from('member')
-    .select('household_id, user_id, role, locale, gender_form')
+    .eq('household_id', householdId)
     .order('created_at', { ascending: true });
 
   if (error) throw new Error(`member list failed: ${error.message}`);
@@ -107,13 +130,15 @@ export async function createHousehold(
   name: string,
   locale: Locale,
 ): Promise<string> {
+  assertHuman(ctx, 'creating a household');
+
   const { data, error } = await ctx.db.rpc('create_household', {
     p_name: name,
     p_locale: locale,
   });
 
   if (error) throw new Error(`create_household failed: ${error.message}`);
-  const householdId = data as unknown as string;
+  const householdId = data;
 
   await recordAudit(ctx, householdId, {
     action: 'household.create',
@@ -140,13 +165,18 @@ export async function updateMemberPreferences(
   if (!ctx.actor.userId)
     throw new Error('updateMemberPreferences needs a signed-in user');
 
-  const { error } = await ctx.db
+  // The affected row is read back: a write RLS turns into a no-op returns no
+  // error, and an audit row for a change that did not happen is worse than no
+  // audit row.
+  const { data, error } = await ctx.db
     .from('member')
     .update({ locale: preferences.locale, gender_form: preferences.genderForm })
     .eq('household_id', householdId)
-    .eq('user_id', ctx.actor.userId);
+    .eq('user_id', ctx.actor.userId)
+    .select('user_id');
 
   if (error) throw new Error(`member update failed: ${error.message}`);
+  if (!data || data.length === 0) throw new Error('member update affected no rows');
 
   await recordAudit(ctx, householdId, {
     action: 'member.preferences',
@@ -154,4 +184,43 @@ export async function updateMemberPreferences(
     entityId: ctx.actor.userId,
     after: { locale: preferences.locale, gender_form: preferences.genderForm },
   });
+}
+
+export interface HouseholdAndMember {
+  household: Household;
+  member: Member;
+}
+
+/**
+ * Both halves of "who is asking, and about which household", resolved once.
+ *
+ * Every authenticated screen needs the household id to scope its reads and the
+ * member to address the reader in the right Hebrew, and resolving them
+ * separately meant two queries for the membership and an opportunity for the
+ * two answers to disagree. One function, one answer.
+ */
+export async function currentHouseholdAndMember(
+  ctx: ServiceContext,
+): Promise<HouseholdAndMember | null> {
+  const member = await currentMember(ctx);
+  if (!member) return null;
+
+  const { data, error } = await ctx.db
+    .from('household')
+    .select('id, name, country, default_locale')
+    .eq('id', member.householdId)
+    .maybeSingle();
+
+  if (error) throw new Error(`household read failed: ${error.message}`);
+  if (!data) return null;
+
+  return {
+    member,
+    household: {
+      id: data.id,
+      name: data.name,
+      country: data.country,
+      defaultLocale: resolveLocale(data.default_locale),
+    },
+  };
 }

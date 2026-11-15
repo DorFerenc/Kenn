@@ -21,18 +21,20 @@ import { readFileSync } from 'node:fs';
 const MANIFEST = 'apps/web/.next/prerender-manifest.json';
 
 /**
- * Route prefixes that must never appear as prerendered output. Locale-prefixed
- * (`/he/today`) and bare (`/today`), because the locale segment is part of
- * every URL and a future unprefixed route would still be a household route.
+ * The routes that MAY be prerendered. Everything else may not.
+ *
+ * This list used to run the other way — six hand-written segment names that
+ * must not appear — and the review of step 5a pointed out what that cannot
+ * see: step 8a's `things`, step 11's `coach` and step 15's settings would each
+ * be a household route the gate is blind to, while it reported "none of them a
+ * household route". A gate that enumerates what it protects goes stale in
+ * exactly the direction that hurts.
+ *
+ * Inverted, a new route fails this check until somebody declares it public,
+ * which is the decision worth making deliberately. Next's own error documents
+ * are the only entries, and they render no household data.
  */
-const PRIVATE_SEGMENTS = [
-  'today',
-  'checklist',
-  'household',
-  'onboarding',
-  'join',
-  'sign-in',
-];
+const MAY_BE_PRERENDERED = new Set(['/_not-found', '/_global-error', '/_error']);
 
 /** Everything Next lists as prerendered, however it listed it. */
 export function prerenderedRoutes(manifest) {
@@ -44,10 +46,7 @@ export function prerenderedRoutes(manifest) {
 }
 
 export function offendingRoutes(manifest) {
-  return prerenderedRoutes(manifest).filter((route) => {
-    const segments = route.split('/').filter(Boolean);
-    return segments.some((segment) => PRIVATE_SEGMENTS.includes(segment));
-  });
+  return prerenderedRoutes(manifest).filter((route) => !MAY_BE_PRERENDERED.has(route));
 }
 
 function main() {
@@ -64,18 +63,22 @@ function main() {
 
   const offenders = offendingRoutes(manifest);
   if (offenders.length > 0) {
-    console.error('check:prerender — these household routes were prerendered:\n');
+    console.error(
+      'check:prerender — these routes were prerendered and are not declared public:\n',
+    );
     for (const route of offenders) console.error(`  ${route}`);
     console.error(
       "\nAdd `export const dynamic = 'force-dynamic'` to the segment, or move the read " +
-        'behind a request API. See apps/web/CLAUDE.md.',
+        'behind a request API. If the route really is public and holds no household ' +
+        'data, add it to MAY_BE_PRERENDERED in this file — deliberately. See ' +
+        'apps/web/CLAUDE.md.',
     );
     process.exit(1);
   }
 
   const routes = prerenderedRoutes(manifest);
   console.log(
-    `check:prerender — ${routes.length} prerendered route(s), none of them a household route.`,
+    `check:prerender — ${routes.length} prerendered route(s), all of them declared public.`,
   );
 }
 

@@ -4,7 +4,7 @@ import { RealtimeTasks } from '@/app/[locale]/(app)/realtime-tasks.tsx';
 import { TaskList } from '@/app/[locale]/(app)/task-list.tsx';
 import { Link } from '@/i18n/navigation.ts';
 import { requireUserContext } from '@/lib/services/context.ts';
-import { currentHousehold, currentMember } from '@/lib/services/household.ts';
+import { currentHouseholdAndMember } from '@/lib/services/household.ts';
 import { anchorsOf } from '@/lib/services/anchors.ts';
 import { listTasks } from '@/lib/services/tasks.ts';
 import { todayInIsrael } from '@/lib/today.ts';
@@ -30,16 +30,20 @@ export default async function TodayPage({
   const ctx = await requireUserContext();
   const today = todayInIsrael();
 
-  const [household, member, tasks, anchors] = await Promise.all([
-    currentHousehold(ctx),
-    currentMember(ctx),
-    listTasks(ctx, today),
-    anchorsOf(ctx),
-  ]);
+  // Resolved first, because everything below is scoped by the household id:
+  // a person can be a member of more than one household, so "the household" is
+  // an answer to a query rather than an assumption a read can make.
+  const current = await currentHouseholdAndMember(ctx);
 
-  // The layout has already sent anyone without these to onboarding; this is
-  // the type narrowing, not a second guard.
-  if (!household || !member) notFound();
+  // The layout has already sent anyone without this to onboarding; this is the
+  // type narrowing, not a second guard.
+  if (!current) notFound();
+  const { household, member } = current;
+
+  const [tasks, anchors] = await Promise.all([
+    listTasks(ctx, household.id, today),
+    anchorsOf(ctx, household.id),
+  ]);
 
   const due = dueNow(tasks).filter((task) => task.decision === null);
   const late = due.filter((task) => task.status === 'overdue');

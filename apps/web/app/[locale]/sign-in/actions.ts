@@ -11,6 +11,7 @@
  */
 
 import { credentialsSchema } from '@/lib/schemas/auth.ts';
+import { safeNext } from '@/lib/safe-next.ts';
 import { signIn, signOut, signUp } from '@/lib/services/auth.ts';
 import { isLocale } from '@kenn/ui';
 import { redirect } from 'next/navigation';
@@ -22,15 +23,6 @@ export interface AuthFormState {
 function localeOf(formData: FormData): string {
   const candidate = String(formData.get('locale') ?? '');
   return isLocale(candidate) ? candidate : 'he';
-}
-
-/** Where to go once signed in: the invite flow comes back to its own page. */
-function nextPath(formData: FormData, locale: string): string {
-  const next = String(formData.get('next') ?? '');
-  // Only a path inside this app, never an absolute URL: `next` arrives from a
-  // query string, and an open redirect on a sign-in page is how a convincing
-  // phishing link gets built.
-  return /^\/[a-zA-Z0-9][\w\-/]*$/.test(next) ? next : `/${locale}`;
 }
 
 export async function signInAction(
@@ -47,7 +39,7 @@ export async function signInAction(
   const result = await signIn(parsed.data.email, parsed.data.password);
   if (!result.ok) return { errorKey: result.errorKey ?? 'unknown' };
 
-  redirect(nextPath(formData, locale));
+  redirect(safeNext(String(formData.get('next') ?? ''), locale));
 }
 
 export async function signUpAction(
@@ -69,7 +61,7 @@ export async function signUpAction(
   const result = await signIn(parsed.data.email, parsed.data.password);
   if (!result.ok) return { errorKey: result.errorKey ?? 'unknown' };
 
-  redirect(nextPath(formData, locale));
+  redirect(safeNext(String(formData.get('next') ?? ''), locale));
 }
 
 export async function signOutAction(formData: FormData): Promise<void> {

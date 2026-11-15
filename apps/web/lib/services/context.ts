@@ -50,3 +50,23 @@ export async function requireUserContext(): Promise<ServiceContext> {
   if (!ctx) throw new Error('not signed in');
   return ctx;
 }
+
+/**
+ * Refuse a capability that belongs to a person.
+ *
+ * Hard rule 5 says the MCP route and the coach never get share or
+ * outbound-message powers, and today that holds only because neither exists —
+ * which is not the standard. An `import { createInvite }` in a step-9 tool
+ * handler would satisfy the type checker and pass lint, because it is inside
+ * the allowed directory, and would mint a share link.
+ *
+ * So the powers say no themselves, now, while there is exactly one actor and
+ * the cost is one line each. Raised by the security review of step 5a.
+ */
+export function assertHuman(ctx: ServiceContext, what: string): void {
+  if (ctx.actor.kind !== 'user') {
+    throw new Error(
+      `${what} is available to a signed-in person only, not to ${ctx.actor.kind}`,
+    );
+  }
+}
