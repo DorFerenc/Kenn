@@ -270,8 +270,8 @@ importers:
   packages/engine:
     dependencies:
       '@hebcal/core':
-        specifier: 6.15.0
-        version: 6.15.0
+        specifier: 6.16.0
+        version: 6.16.0
     devDependencies:
       typescript:
         specifier: 6.0.3
@@ -561,8 +561,8 @@ packages:
   '@formatjs/intl-localematcher@0.8.14':
     resolution: {integrity: sha512-8O7V38QmbB11+ryJ3KM/znrzXtiqgpXzqNoqDsndHZZ5/zDKTTL+cf5F0mzXkQEwhx8IlWnqYvEovf2S5EwLTw==}
 
-  '@hebcal/core@6.15.0':
-    resolution: {integrity: sha512-kOiDjsg+a0jzXuEYERw+p+PvfV0DsIcQtnxJM8ZibyJr4dvEtGCvXIHSbHuNLNFHvD9qF1XcRwEVevb8aSkH4Q==}
+  '@hebcal/core@6.16.0':
+    resolution: {integrity: sha512-B0JrcDSkMCsgyX/zxSQeEGeARy9c8TQMxEehxsOUjUwUGD1MGI0yg2iDqzVrWo7P6IGTS5lckjIbudDISHdJbA==}
     engines: {node: '>= 18'}
 
   '@hebcal/hdate@0.23.1':
@@ -2705,7 +2705,7 @@ snapshots:
     dependencies:
       '@formatjs/fast-memoize': 3.1.7
 
-  '@hebcal/core@6.15.0':
+  '@hebcal/core@6.16.0':
     dependencies:
       '@hebcal/hdate': 0.23.1
       '@hebcal/noaa': 0.12.4
