@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "@formatjs/icu-messageformat-parser": "3.5.22",
+    "@formatjs/icu-messageformat-parser": "3.5.23",
     "eslint": "10.14.0",
     "eslint-config-next": "16.4.5",
     "eslint-config-prettier": "10.1.8",
