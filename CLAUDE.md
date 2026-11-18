@@ -109,8 +109,9 @@ The four that are not simply "latest":
 - **Supabase CLI 3.x** — local by default. Reaching the hosted project needs
   `--remote`, and an unattended hosted change needs `--yes`. `config.toml` uses
   `[local_smtp]`, not the removed `[inbucket]` (ADR-0003).
-- **knip 6.44.1**, not 6.44.2 — `minimumReleaseAge` in `pnpm-workspace.yaml`
-  refuses any version published in the last 24 hours.
+- **Nothing younger than a day** — `minimumReleaseAge` in `pnpm-workspace.yaml`
+  refuses any version published in the last 24 hours, so a fresh release waits
+  (knip sat at 6.44.1 for that reason until 2026-11-18).
 
 ESLint runs directly, never through `next lint`, which Next.js 16 removed.
 
