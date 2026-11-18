@@ -132,6 +132,10 @@ mechanical forms in `/review-code`, the `@supabase/*` import boundary, and
 `packages/db/CLAUDE.md` now teaching per-operation policies instead of the
 `for all` template that propagated this step's hole.
 
+> **Accepted, all four, on 2026-11-18** (there were four, not three:
+> `7438b56`, `c18868b`, `13258a8`, `96c1a6b`). They stay on the branch as they
+> are.
+
 ### Next
 
 **Step 6** — reminders: Web Push, the Sunday digest and the ICS feed — which
