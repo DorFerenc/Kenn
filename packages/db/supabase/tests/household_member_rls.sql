@@ -9,7 +9,7 @@
 
 begin;
 
-select plan(14);
+select plan(15);
 
 -- ---------------------------------------------------------------- fixtures
 -- Created as the migration role, which bypasses RLS, so the fixtures exist
@@ -116,16 +116,29 @@ select is(
   'a member of A can update their own household'
 );
 
+-- `role` is not a grantable column on `member` any more, so this fails louder
+-- than it used to: a column privilege raises where a row policy would have
+-- reported zero rows. The step-1 version of this test asserted the quiet
+-- version, and the security review of step 5a is why it does not any more —
+-- one parent being able to re-role the other was never intended.
+select throws_ok(
+  $$update member set role = 'owner'
+    where household_id = '22222222-0000-0000-0000-000000000002'$$,
+  '42501',
+  null,
+  'nobody can change a role at all, in their own household or another'
+);
+
 create temporary table upd_member_other as
 with u as (
-  update member set role = 'owner'
+  update member set locale = 'ru'
   where household_id = '22222222-0000-0000-0000-000000000002'
   returning 1
 ) select * from u;
 
 select is(
   (select count(*) from upd_member_other), 0::bigint,
-  'an update aimed at household B members touches no rows'
+  'an update of a grantable column aimed at household B members touches no rows'
 );
 
 -- ------------------------------------------------------------- DELETE

@@ -72,21 +72,62 @@ flowchart LR
       engine tests green under `TZ=America/Los_Angeles`; ISO date strings and UTC
       only, no `Date` with a time anywhere in the package.)_
 
-- [ ] **5.** Onboarding wizard, Today and Checklist, realtime sync, production
-      deploy, PWA on both phones. Playwright arrives here; `eslint-config-next`
-      too. Replaces the step-2 harness at `app/[locale]/page.tsx`, and reads
-      `member.locale` and `member.gender_form` through the service layer instead
-      of defaulting to Hebrew and the neutral plural. Takes `@supabase/supabase-js`,
-      `zod` and the workspace packages off `knip.json`'s `ignoreDependencies`.
+- [x] **5a.** The app against local Supabase: the service layer, the first
+      screens, realtime sync and the end-to-end suite. _(2026-11-15 — four
+      tables with RLS and a pgTAP file each — `pregnancy`, `household_profile`,
+      `task_state`, `audit_log` — taking 30 assertions to 76; thirteen modules
+      in `apps/web/lib/services` as the only database callers, with
+      `@supabase/ssr` added to the lint boundary beside `@supabase/supabase-js`;
+      `lib/today.ts` as the app's only clock, held there by a test that scans
+      for any other `Date`; `pnpm kb:build` compiling the YAML into
+      `packages/kb/generated/items.json`, because a bundler cannot follow a
+      `readdirSync`; sign-in and sign-up, a four-step onboarding wizard, Today,
+      the Checklist, the household page with its invite link and the join page,
+      replacing the step-2 harness and reading `member.locale` and
+      `member.gender_form` through the service layer; a `task_state`
+      subscription that calls `router.refresh()`, so the other parent's screen
+      re-reads through the service layer rather than trusting the payload; 21
+      Playwright tests, `eslint-config-next`, and a CI job that runs the suite
+      with the realtime service switched on; and `pnpm check:prerender`, which
+      fails if a household route reaches the prerender manifest. The design
+      decision is what is **not** there: no `task_instance` table, because a
+      window is day offsets from an anchor and the engine derives it at read
+      time ([ADR-0008](../adr/0008-derive-windows-store-only-decisions.md)).
+      Only the two Serwist entries remain in `knip.json`'s
+      `ignoreDependencies`. The two reviews then found what the step had got
+      wrong, and both were the same shape — a guarantee true of `apps/web` and
+      false of the database: every policy was `for all`, so one authenticated
+      request to the Data API could delete a household and cascade away its
+      audit log, and "the household" was a singleton in five reads although
+      nothing stopped a person being in two. Fixed with per-operation policies,
+      no delete policy anywhere, column privileges, and `accept_invite()`
+      refusing a second household. 94 pgTAP assertions, 364 unit tests, 24
+      end-to-end tests.
+      `docs/learnings/2026-11-15-step-5a-service-layer-and-screens.md`)_
+
+- [ ] **5b.** Production: Google OAuth, real MFA enrolment, `deploy.yml`, the
+      first production deploy, and the PWA installed from production on both
+      phones. Carries one open decision: **whether email + password survives
+      into production.** It is what step 5a signs in with and what the
+      Playwright suite needs; Google OAuth may replace it or sit beside it.
+      Hosted auth rate limits belong here too, in a `[remotes.production]`
+      block — step 5a raised only the local `sign_in_sign_ups`, and the default
+      30 per five minutes is the right order of magnitude for two real people.
+      Needs the hosted Supabase project and the Vercel account, so it shares its
+      blockers with step 1. **Gate A's "both phones have the PWA installed from
+      production" cannot be ticked until this lands.**
 - [ ] **6.** Reminders: Web Push, the Sunday digest and the ICS calendar feed.
       **Risk:** Serwist integrates through a webpack plugin and Next.js 16 fails
       the build on a custom webpack config. Verify early.
 - [ ] **7.** Safety center v1: offline emergency card, red-flag cards, safe-sleep
       and shelter checklists, car automation guide.
 - [ ] **8a.** Things, the mechanism: `kind: thing` in the KB schema with the
-      safety-veto refinement, the profile hints as a migration with RLS and its
-      pgTAP test, catalogue filtering in `packages/engine`, the picker UI and the
-      budget view. Design: [`recommended-lists.md`](recommended-lists.md).
+      safety-veto refinement, the Things hints (baby room, car, lift, budget) as
+      new columns on `household_profile` rather than a table of their own —
+      step 5a created it with its RLS policy and pgTAP file, so 8a adds columns
+      and the assertions that cover them — catalogue filtering in
+      `packages/engine`, the picker UI and the budget view. Design:
+      [`recommended-lists.md`](recommended-lists.md).
 - [ ] **8b.** Things, the content: seed the catalogue from the four real lists —
       **safety overrides first** — then the CSV importer per
       [`things-csv-import.md`](things-csv-import.md), then the gift registry.
@@ -111,6 +152,16 @@ flowchart LR
       **Open decision:** which OAuth 2.1 authorization server. Supabase Auth is
       an identity provider, not an AS with dynamic client registration, so the
       plan's fallback probably does not apply. Do not hand-write it.
+      **First task, before any tool:** move each household write into a
+      `security definer` function that performs the change and its `audit_log`
+      row in one transaction, and take direct insert and update privileges away
+      from `authenticated`. Today a write made straight to the Data API with a
+      member's own JWT leaves no audit row, and the audit insert is a second
+      statement that can fail after the change has committed — both acceptable
+      with one actor and neither acceptable once an MCP client is the second
+      one, because everything step 10 promises about AI accountability rests on
+      that column. Raised by the security review of step 5a; recorded in
+      [ADR-0008](../adr/0008-derive-windows-store-only-decisions.md).
 - [ ] **10.** MCP write tools, audit log, undo, "revoke all".
 - [ ] **11.** Coach v1: weekly check-in and voice capture, proposals as
       tap-to-apply cards. Needs the Anthropic key and a spend cap.

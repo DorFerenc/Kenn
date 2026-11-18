@@ -158,4 +158,24 @@ Every build session:
      only after it has happened twice; prefer a lint rule, a test or a hook over a
      sentence here. Hard rules above are never relaxed by a retro, only by an ADR. -->
 
-_None yet. Step 0 was the first session._
+1. **Ask what a gate cannot see, not only what it rejects.** Second occurrence
+   (step 2's colour scan, step 5a's i18n key scan, which matched
+   `useTranslations` and silently skipped every `getTranslations` file). A scan
+   that covers less than it claims reports itself clean, which is worse than no
+   scan. Promoted into `/review-code`.
+   [`learnings/2026-11-15-step-5a-service-layer-and-screens.md`](learnings/2026-11-15-step-5a-service-layer-and-screens.md)
+2. **A guarantee is only as strong as the layer that enforces it.** First
+   occurrence, and it cost the most: three claims written into an ADR, a pgTAP
+   suite and a dozen comments at step 5a — "audit_log is append-only", "no
+   request path deletes a task_state row", "one household per person" — were
+   true of `apps/web` and false of Postgres, which is the boundary. The Data API
+   exposes every table to a member's own JWT, so one `curl` deleted a household
+   and cascaded its whole audit log away. Check a claimed property against the
+   layer that would have to hold it.
+   [`learnings/2026-11-15-step-5a-service-layer-and-screens.md`](learnings/2026-11-15-step-5a-service-layer-and-screens.md)
+3. **The index carries state from before this commit.** Second occurrence (step
+   2 was `git add -A`; step 5a inherited a `git add` from a commit the hook had
+   refused, and a one-file `chore:` commit took fourteen files of schema with
+   it). `.githooks/pre-commit` now prints the staged paths before it runs the
+   gate, so the mix is visible while there is still time to fix it.
+   [`learnings/2026-11-15-step-5a-service-layer-and-screens.md`](learnings/2026-11-15-step-5a-service-layer-and-screens.md)

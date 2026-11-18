@@ -5,7 +5,7 @@ flowchart LR
   D --> E["Supabase in CI:<br/>migrations + pgTAP"]
   E --> F["KB validate"]
   F --> G["Docs drift check"]
-  G --> H["Vercel preview +<br/>Playwright"]
+  G --> H["Playwright e2e:<br/>Supabase + realtime in CI"]
   H --> I["AI review agent"]
   I --> J{"Human approves?"}
   J -- no --> A

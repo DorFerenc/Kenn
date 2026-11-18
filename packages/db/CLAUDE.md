@@ -19,17 +19,49 @@ language sql stable security definer set search_path = public as $$
   );
 $$;
 
-alter table task_instance enable row level security;
+alter table task_state enable row level security;
 
-create policy task_rw on task_instance
-  for all
+-- One policy per operation the app performs, and no delete policy anywhere.
+create policy task_state_select on task_state
+  for select using (is_member(household_id));
+
+create policy task_state_insert on task_state
+  for insert with check (is_member(household_id) and acted_by = auth.uid());
+
+create policy task_state_update on task_state
+  for update
   using (is_member(household_id))
-  with check (is_member(household_id));
+  with check (is_member(household_id) and acted_by = auth.uid());
 ```
 
+**Never `for all`.** This used to show one `for all` policy, and that template
+propagated to four tables in one step before the security review of step 5a
+found what it costs: the publishable key is public and every table is exposed
+through the Data API, so a signed-in member holds a general-purpose SQL client
+against their own household. `for all` is correct about _which household_ and
+silent about _which operation_ — so one request deleted a household and
+cascaded away its whole audit log, and another deleted a `task_state` row that
+ADR-0008 calls structurally undeletable. Kenn deletes nothing: a reopen writes
+`state = 'open'`, a revoke writes `revoked_at`. Where only some columns may
+change, say so with a column privilege (`grant update (locale, gender_form)`),
+because RLS filters rows and cannot express that.
+
 The test signs in as a member of household A and asserts **zero rows** from
-household B, for select, insert, update **and** delete. A new table without that
+household B, for select, insert, update **and** delete — and then asserts what a
+member cannot do to their **own** household's rows, which is the question that
+went unasked until step 5a and is where both real holes were.
+`tests/no_delete_policies.sql` is the file for that. A new table without its
 test fails CI. Use the `write-migration` skill; it does all four in order.
+
+**One table goes further than the pattern:** `audit_log` has no update policy
+either, so a member cannot rewrite their own history — an audit log its own
+subject can edit is not an audit log — and its foreign key refuses a household
+delete rather than cascading, because a cascade removes rows without anyone
+updating or deleting them. The reasoning is in
+[ADR-0008](../../docs/adr/0008-derive-windows-store-only-decisions.md); a second
+table claiming the same exemption needs its own ADR. Note that an `UPDATE` with
+no matching policy reports zero rows rather than raising, so the refusal has to
+be asserted or it is invisible.
 
 ## Migrations
 

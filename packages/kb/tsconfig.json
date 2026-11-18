@@ -3,6 +3,6 @@
   "compilerOptions": {
     "types": ["node"]
   },
-  "include": ["schema.ts", "scripts/**/*.ts"],
+  "include": ["schema.ts", "load.ts", "items.ts", "scripts/**/*.ts"],
   "exclude": ["node_modules"]
 }

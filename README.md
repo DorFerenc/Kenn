@@ -39,7 +39,9 @@ Full detail: [`docs/plans/roadmap.md`](docs/plans/roadmap.md) ·
 
 ## Quickstart
 
-Five commands from a fresh clone to the app in a browser.
+A handful of commands from a fresh clone to the app in a browser. You need
+Node 24, and Docker Desktop **running**, because sign-in and every household
+screen talk to a local Supabase stack.
 
 **1. Install Node 24 and enable pnpm.** The version is pinned in `.nvmrc`,
 `engines` and CI, and `.npmrc` sets `engine-strict`, so Node 22 refuses to
@@ -68,21 +70,34 @@ analysis. It is green on a fresh clone, and if it is not, stop here.
 pnpm check
 ```
 
-**4. Run the app.**
+**4. Start the local database.** Postgres, Auth and Realtime in Docker, with
+every migration applied and a fake household seeded. The first run downloads
+the images and takes a few minutes.
+
+```bash
+pnpm db:start
+```
+
+**5. Point the app at it.** Writes `apps/web/.env.local` from `supabase status`.
+The file is git-ignored, and the values are the CLI's local demo keys, which is
+still no reason to commit them.
+
+```bash
+pnpm dev:env
+```
+
+**6. Run the app.**
 
 ```bash
 pnpm dev
 ```
 
 Then open **http://localhost:3000/he** for Hebrew and **/en** for English. `/`
-redirects to Hebrew.
-
-**5. Start the database when you need it** — only for schema and RLS work;
-steps 1–4 above do not need it. Docker must already be running.
-
-```bash
-pnpm db:start
-```
+redirects to Hebrew. Create an account with any address on a `.test` domain
+(nothing is sent anywhere), walk the four onboarding steps, and you land on
+Today. To try two parents, open the Household page, create an invite link, and
+open it in a private window signed in as a second `.test` account: a tick on one
+screen appears on the other without a reload.
 
 <details>
 <summary>If something does not work</summary>

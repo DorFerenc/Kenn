@@ -36,7 +36,7 @@ command -v gh >/dev/null 2>&1 || {
 
 printf 'Protecting the default branch of %s (required approvals: %s)\n' "$REPO" "$APPROVALS"
 
-# The two contexts below are the `name:` of each job in .github/workflows/ci.yml.
+# The contexts below are the `name:` of each job in .github/workflows/ci.yml.
 # Renaming a job there means renaming it here, or the check stops being required.
 payload=$(cat <<JSON
 {
@@ -63,6 +63,7 @@ payload=$(cat <<JSON
         "required_status_checks": [
           { "context": "Typecheck, lint and test" },
           { "context": "Migrations and RLS" },
+          { "context": "End to end (Playwright)" },
           { "context": "Gov watcher (Python)" }
         ]
       } }
@@ -104,7 +105,8 @@ Run this script from your own machine, once:
 
 Or set the same rules by hand in Settings, Rules, Rulesets: require a pull
 request with 0 required approvals, require the status checks "Typecheck, lint and
-test", "Migrations and RLS" and "Gov watcher (Python)", block force pushes and
+test", "Migrations and RLS", "End to end (Playwright)" and "Gov watcher
+(Python)", block force pushes and
 deletion, and require
 conversation resolution.
 HINT

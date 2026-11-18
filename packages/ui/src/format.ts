@@ -56,3 +56,31 @@ const FORMATTERS: Record<Locale, (iso: IsoDate) => string> = {
 export function formatIsoDate(iso: unknown, locale: Locale): string {
   return FORMATTERS[locale](assertIsoDate(iso, 'date to format'));
 }
+
+/**
+ * Israeli clock date, for rendering a `timestamptz`.
+ *
+ * `task_state.acted_at` is an instant, not a date, and the day it fell on
+ * depends on where you stand: 23:30 in Jerusalem is the previous day in UTC.
+ * Slicing the ISO string — the obvious thing, and what this function exists to
+ * stop — therefore shows "ticked yesterday" for anything done late in the
+ * evening. The zone is Asia/Jerusalem for the same reason the app's clock is:
+ * both parents plan against Israeli clinic hours.
+ *
+ * It is rendering, not arithmetic: no days are added and no window moves. The
+ * boundary this file opens with still holds.
+ */
+const israeliDay = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Jerusalem',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+export function formatTimestampDate(timestamp: string, locale: Locale): string {
+  const instant = new Date(timestamp);
+  if (Number.isNaN(instant.getTime())) {
+    throw new Error(`formatTimestampDate: not a timestamp: ${timestamp}`);
+  }
+  return formatIsoDate(israeliDay.format(instant), locale);
+}

@@ -5,78 +5,22 @@
  * hurt someone: a published item with a missing locale, a published item with no
  * source, and a `thing` marked unsafe or discouraged without a named authority.
  *
- * Also checks two things the schema cannot see because they are cross-file:
- * duplicate ids, and a `review_by` date that has already passed.
+ * Parsing lives in `../load.ts`, shared with `pnpm kb:build`, so the gate and
+ * the artefact the app imports can never disagree about what the content says.
+ * What is left here is the reporting, plus the one check that is about time
+ * rather than shape: a `review_by` date that has already passed.
  */
 
-import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { load } from 'js-yaml';
-import { kbItemSchema, type KbItem } from '../schema.ts';
+import { loadKbFromDisk } from '../load.ts';
 
-const packageRoot = fileURLToPath(new URL('..', import.meta.url));
-const contentRoot = join(packageRoot, 'content');
-
-function yamlFiles(dir: string): string[] {
-  const found: string[] = [];
-  for (const entry of readdirSync(dir)) {
-    const full = join(dir, entry);
-    if (statSync(full).isDirectory()) found.push(...yamlFiles(full));
-    else if (entry.endsWith('.yaml') || entry.endsWith('.yml')) found.push(full);
-  }
-  return found.sort();
-}
-
-const errors: string[] = [];
-const warnings: string[] = [];
-const seen = new Map<string, string>();
-const items: KbItem[] = [];
+const { items, errors } = loadKbFromDisk();
 const today = new Date().toISOString().slice(0, 10);
-
-for (const file of yamlFiles(contentRoot)) {
-  const where = relative(packageRoot, file);
-  let doc: unknown;
-  try {
-    doc = load(readFileSync(file, 'utf8'));
-  } catch (error) {
-    errors.push(`${where}: ${error instanceof Error ? error.message : String(error)}`);
-    continue;
-  }
-
-  const raw = (doc as { items?: unknown[] })?.items;
-  if (!Array.isArray(raw)) {
-    errors.push(`${where}: expected a top-level "items:" list`);
-    continue;
-  }
-
-  raw.forEach((entry, i) => {
-    const result = kbItemSchema.safeParse(entry);
-    if (!result.success) {
-      const id = (entry as { id?: string })?.id ?? `items[${i}]`;
-      for (const issue of result.error.issues) {
-        const path = issue.path.length > 0 ? issue.path.join('.') : '(root)';
-        errors.push(`${where} · ${id} · ${path}: ${issue.message}`);
-      }
-      return;
-    }
-
-    const item = result.data;
-    const previous = seen.get(item.id);
-    if (previous) {
-      errors.push(`${where} · ${item.id}: duplicate id, already defined in ${previous}`);
-      return;
-    }
-    seen.set(item.id, where);
-    items.push(item);
-
-    if (item.review_by < today) {
-      warnings.push(
-        `${item.id}: review_by ${item.review_by} has passed — recheck it against its source`,
-      );
-    }
-  });
-}
+const warnings = items
+  .filter((item) => item.review_by < today)
+  .map(
+    (item) =>
+      `${item.id}: review_by ${item.review_by} has passed — recheck it against its source`,
+  );
 
 if (errors.length > 0) {
   console.error(`kb:validate — ${errors.length} problem(s):\n`);

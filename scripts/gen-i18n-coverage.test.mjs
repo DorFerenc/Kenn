@@ -16,6 +16,7 @@ import {
   checkMessages,
   generateCoverage,
   toMarkdown,
+  translatorBindings,
   usedKeys,
 } from './gen-i18n-coverage.mjs';
 
@@ -243,6 +244,53 @@ describe('the keys the app actually asks for', () => {
     const known = new Set(checkMessages().keys);
     const missing = literal.filter(({ key }) => !known.has(key));
     expect(missing).toEqual([]);
+  });
+
+  it('resolves two namespaces in one file independently', () => {
+    // The onboarding wizard binds three. The earlier extractor skipped any
+    // file with more than one namespace, so 25 of its keys were unchecked
+    // while the gate reported itself clean.
+    const dir = mkdtempSync(join(tmpdir(), 'kenn-used-'));
+    writeFileSync(
+      join(dir, 'wizard.tsx'),
+      [
+        "const t = useTranslations('onboarding');",
+        "const common = useTranslations('common');",
+        "t('next');",
+        "common('back');",
+      ].join('\n'),
+    );
+
+    const { literal } = usedKeys([dir]);
+    expect(literal.map((u) => u.key).sort()).toEqual(['common.back', 'onboarding.next']);
+  });
+
+  it("sees getTranslations('ns'), which is how every server page reads", () => {
+    // This is the shape that was invisible: `getTranslations` did not match the
+    // namespace pattern, so every key in a server page resolved without its
+    // prefix and the missing-key check could not fire.
+    const dir = mkdtempSync(join(tmpdir(), 'kenn-used-'));
+    writeFileSync(
+      join(dir, 'page.tsx'),
+      ["const t = await getTranslations('household');", "t('members');"].join('\n'),
+    );
+
+    expect(usedKeys([dir]).literal.map((u) => u.key)).toEqual(['household.members']);
+  });
+
+  it('reads all three ways a translator is bound', () => {
+    const bindings = translatorBindings(
+      [
+        "const a = useTranslations('today');",
+        'const b = await getTranslations();',
+        "const c = await getTranslations({ locale, namespace: 'app' });",
+      ].join('\n'),
+    );
+    expect([...bindings]).toEqual([
+      ['a', 'today.'],
+      ['b', ''],
+      ['c', 'app.'],
+    ]);
   });
 
   it('records the prefix of a key built from a template literal', () => {

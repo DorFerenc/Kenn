@@ -1,12 +1,43 @@
 // Kenn ESLint configuration — flat config (ESLint 10).
 //
 // `next lint` was removed in Next.js 16, so ESLint runs directly from the root
-// over every workspace. eslint-config-next is added to apps/web from step 5,
-// when that app has real code.
+// over every workspace. eslint-config-next arrived with the first real screens
+// at roadmap step 5a; it is what brings jsx-a11y and react-hooks.
 import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import prettier from 'eslint-config-prettier';
+import next from 'eslint-config-next';
+
+/**
+ * eslint-config-next, made to fit this repository. Two things about it have to
+ * be changed, and both are the kind that fail loudly only once there is code:
+ *
+ * 1. **It matches every file in the repository.** Its globs are
+ *    `**\/*.{js,jsx,mjs,ts,tsx,mts,cts}`, which would lint the engine and the
+ *    KB as though they were React. Each entry is re-anchored to apps/web. The
+ *    entry that only carries `ignores` is left alone: ignoring `.next/**` is
+ *    correct everywhere.
+ *
+ * 2. **It installs a Babel parser** (`next/babel`) for everything, and then
+ *    overrides it with typescript-eslint's parser for `.ts` and `.tsx` only.
+ *    Kenn has no Babel — Next.js 16 is Turbopack-only — so the Babel parser
+ *    reached exactly one file, `apps/web/postcss.config.mjs`, where it replaced
+ *    the type-aware parser and made `@typescript-eslint/consistent-type-imports`
+ *    throw rather than run. The parser is dropped and the globals, plugins,
+ *    settings and 67 rules are kept, which is what the config is here for.
+ */
+const nextForTheApp = next.map((entry) => {
+  if (!entry.files) return entry;
+  const files = entry.files.map((glob) => `apps/web/${glob}`);
+  if (!entry.languageOptions?.parser) return { ...entry, files };
+  const {
+    parser: _parser,
+    parserOptions: _parserOptions,
+    ...rest
+  } = entry.languageOptions;
+  return { ...entry, files, languageOptions: rest };
+});
 
 export default tseslint.config(
   {
@@ -24,6 +55,7 @@ export default tseslint.config(
 
   js.configs.recommended,
   ...tseslint.configs.recommended,
+  ...nextForTheApp,
   prettier,
 
   {
@@ -87,6 +119,13 @@ export default tseslint.config(
     },
   },
 
+  // Kenn is app-router only, so there is no pages directory to check a bare
+  // <a href> against — and its own rule already forbids `next/link`.
+  {
+    files: ['apps/web/**/*.{js,jsx,mjs,ts,tsx,mts,cts}'],
+    rules: { '@next/next/no-html-link-for-pages': 'off' },
+  },
+
   // Only the service layer talks to the database, and links keep their locale.
   //
   // `no-restricted-imports` replaces the base rule rather than extending it,
@@ -106,12 +145,32 @@ export default tseslint.config(
               message:
                 'Import across packages by workspace name (@kenn/engine), or by the @/ alias within apps/web.',
             },
+            {
+              // The two names below are the doors in use; this closes the rest
+              // of the wall. A deep import (@supabase/ssr/dist/...) or a
+              // sibling package (@supabase/postgrest-js) is the same boundary
+              // crossing and was not covered. pnpm's strict linking makes an
+              // undeclared package unresolvable, so this is hardening rather
+              // than a live hole — raised by the security review of step 5a.
+              group: ['@supabase/*', '@supabase/*/**'],
+              message:
+                'Only apps/web/lib/services may create a Supabase client. Call a service function instead. See CLAUDE.md.',
+            },
           ],
           paths: [
             {
               name: '@supabase/supabase-js',
               message:
                 'Only apps/web/lib/services may talk to Postgres. Call a service function instead. See CLAUDE.md.',
+            },
+            {
+              // The same boundary, through the other door. @supabase/ssr is how
+              // a session reaches a cookie store, so a component importing it
+              // would hold a database client without going near
+              // @supabase/supabase-js, and hard rule 1 would be a comment.
+              name: '@supabase/ssr',
+              message:
+                'Only apps/web/lib/services may create a Supabase client. Call a service function instead. See CLAUDE.md.',
             },
             {
               name: 'next/link',

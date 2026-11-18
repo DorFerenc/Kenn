@@ -72,7 +72,11 @@ That is lint, typecheck, format, Vitest, `kb:validate` and knip. Plus, when they
 apply to the step:
 
 - `pnpm db:test` — pgTAP, for any schema change
-- `pnpm e2e` — Playwright, for any user-visible flow
+- `pnpm e2e` — Playwright, for any user-visible flow. **It is a different
+  instrument, not a slower unit test**: step 5a's wizard submitted itself from
+  step 3 because React mutated a `type="button"` into a `type="submit"` on the
+  node that had just been clicked, and nothing but a browser could have seen it.
+  Needs `pnpm db:start` and `pnpm dev:env` first.
 - `TZ=America/Los_Angeles pnpm test` — **always**, for any change in
   `packages/engine`. The engine is the one place a timezone bug hides.
 

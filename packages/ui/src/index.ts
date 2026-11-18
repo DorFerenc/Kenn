@@ -26,4 +26,4 @@ export {
   type Locale,
 } from './locales.ts';
 
-export { formatIsoDate } from './format.ts';
+export { formatIsoDate, formatTimestampDate } from './format.ts';

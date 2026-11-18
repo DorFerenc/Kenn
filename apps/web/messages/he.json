@@ -8,17 +8,141 @@
     "he": "עברית",
     "en": "English"
   },
+  "common": {
+    "signOut": "יציאה",
+    "back": "חזרה",
+    "notSaid": "לא נאמר",
+    "loading": "רגע…",
+    "yes": "כן",
+    "no": "לא"
+  },
+  "nav": {
+    "today": "היום",
+    "checklist": "הרשימה",
+    "household": "הבית",
+    "label": "ניווט"
+  },
+  "auth": {
+    "signInTitle": "כניסה לקֵן",
+    "signUpTitle": "חשבון חדש",
+    "subtitle": "בית אחד, רשימה אחת, שני הורים.",
+    "email": "דוא״ל",
+    "password": "סיסמה",
+    "passwordHelp": "לפחות 8 תווים.",
+    "signInSubmit": "{genderForm, select, feminine {היכנסי} masculine {היכנס} other {היכנסו}}",
+    "signUpSubmit": "{genderForm, select, feminine {פתחי חשבון} masculine {פתח חשבון} other {פתחו חשבון}}",
+    "toSignUp": "עוד אין חשבון? ליצירת חשבון",
+    "toSignIn": "יש כבר חשבון? לכניסה",
+    "errors": {
+      "invalidCredentials": "הדוא״ל או הסיסמה אינם נכונים.",
+      "emailTaken": "כבר קיים חשבון עם הדוא״ל הזה.",
+      "weakPassword": "הסיסמה קצרה מדי — לפחות 8 תווים.",
+      "invalidInput": "הדוא״ל או הסיסמה אינם בפורמט תקין.",
+      "unknown": "משהו נכשל. אפשר לנסות שוב בעוד רגע."
+    }
+  },
   "onboarding": {
+    "title": "נגדיר את קֵן יחד",
+    "subtitle": "שתי דקות, ואז הרשימה תתוארך לפי ההריון שלכם.",
+    "step": "שלב {current} מתוך {total}",
+    "next": "{genderForm, select, feminine {המשיכי} masculine {המשך} other {המשיכו}}",
+    "finish": "{genderForm, select, feminine {סיימי} masculine {סיים} other {סיימו}}",
     "genderForm": {
       "question": "איך נפנה אליכם?",
       "help": "אפשר לשנות בכל שלב בהגדרות.",
       "feminine": "בלשון נקבה",
       "masculine": "בלשון זכר",
       "neutral": "בלשון רבים"
+    },
+    "household": {
+      "label": "שם הבית",
+      "help": "לזיהוי בלבד. אפשר לשנות אחר כך."
+    },
+    "dating": {
+      "question": "איך נספור את ההריון?",
+      "help": "אולטרסאונד מדויק יותר מתאריך הווסת האחרונה, והחזרת עוברים מדויקת משניהם.",
+      "lmp": "לפי הווסת האחרונה",
+      "ultrasound": "לפי תאריך לידה משוער מאולטרסאונד",
+      "ivf_transfer": "לפי החזרת עוברים",
+      "lmpDate": "היום הראשון של הווסת האחרונה",
+      "eddDate": "תאריך הלידה המשוער",
+      "transferDate": "תאריך ההחזרה",
+      "transferHelp": "מניחים החזרה ביום 5. בהחזרה ביום 3 התאריכים מוקדמים ביומיים — כדאי לעדכן מול המרפאה."
+    },
+    "fetuses": {
+      "question": "כמה עוברים?",
+      "help": "משפיע על חלק מהבדיקות ועל מענק הלידה."
+    },
+    "profile": {
+      "question": "עוד כמה דברים",
+      "help": "כל תשובה כאן מסתירה או מראה המלצות. אפשר לדלג על הכול.",
+      "firstborn": "זה הילד הראשון",
+      "customs": "מסורת",
+      "healthFund": "קופת חולים",
+      "supplementary": "יש ביטוח משלים",
+      "rh": "סוג דם שלילי (Rh שלילי)",
+      "rhHelp": "קובע אם תופיע בדיקת נוגדנים ואנטי-D. אם לא יודעים — אפשר להשאיר על „לא נאמר”."
+    },
+    "customs": {
+      "jewish": "יהודית",
+      "muslim": "מוסלמית",
+      "christian": "נוצרית",
+      "druze": "דרוזית",
+      "none": "ללא"
+    },
+    "healthFund": {
+      "clalit": "כללית",
+      "maccabi": "מכבי",
+      "meuhedet": "מאוחדת",
+      "leumit": "לאומית"
+    },
+    "errors": {
+      "invalid": "משהו בטופס לא תקין — כדאי לבדוק את התאריך."
+    }
+  },
+  "today": {
+    "title": "היום",
+    "gestation": "שבוע {weeks}+{days}",
+    "gestationHelp": "נספר מהעוגן שהגדרתם.",
+    "nextUp": "הדבר הבא",
+    "nothingDue": "אין מה לעשות היום. זה בסדר.",
+    "lateCount": "{count, plural, one {פריט אחד באיחור} other {# פריטים באיחור}}",
+    "seeAll": "לרשימה המלאה",
+    "noPregnancy": "עוד לא הגדרנו הריון."
+  },
+  "checklist": {
+    "title": "הרשימה",
+    "empty": "אין כאן פריטים.",
+    "group": {
+      "overdue": "באיחור",
+      "closing": "נסגר בקרוב",
+      "open": "פתוח עכשיו",
+      "upcoming": "בהמשך",
+      "done": "בוצע",
+      "skipped": "דולג"
     }
   },
   "tasks": {
-    "markDone": "{genderForm, select, feminine {סמני כבוצע} masculine {סמן כבוצע} other {סמנו כבוצע}}"
+    "markDone": "{genderForm, select, feminine {סמני כבוצע} masculine {סמן כבוצע} other {סמנו כבוצע}}",
+    "skip": "{genderForm, select, feminine {דלגי} masculine {דלג} other {דלגו}}",
+    "undo": "{genderForm, select, feminine {בטלי} masculine {בטל} other {בטלו}}",
+    "reopen": "{genderForm, select, feminine {פתחי מחדש} masculine {פתח מחדש} other {פתחו מחדש}}",
+    "doneOn": "בוצע ב־{date}",
+    "guidanceUpdated": "ההנחיה התעדכנה מאז",
+    "source": "מקור",
+    "priority": {
+      "critical": "קריטי",
+      "important": "חשוב",
+      "optional": "לבחירה"
+    },
+    "coverage": {
+      "basket": "בסל הבריאות",
+      "supplementary": "בשב״ן",
+      "private": "פרטי",
+      "otc": "ללא מרשם",
+      "free": "חינם"
+    },
+    "saveFailed": "השינוי לא נשמר. אפשר לנסות שוב."
   },
   "window": {
     "before": "נפתח ב־{date}",
@@ -26,19 +150,48 @@
     "after": "נסגר ב־{date}"
   },
   "evidence": {
+    "guideline": "הנחיה רשמית",
     "strong": "ראיות חזקות",
     "moderate": "ראיות בינוניות",
     "weak": "ראיות חלשות",
     "custom": "הגדרה שלכם"
   },
+  "household": {
+    "title": "הבית",
+    "members": "מי בבית",
+    "you": "{genderForm, select, feminine {זאת את} masculine {זה אתה} other {זה אתם}}",
+    "role": {
+      "owner": "הורה",
+      "family": "משפחה",
+      "caregiver": "מטפלים"
+    },
+    "invite": {
+      "title": "להזמין את ההורה השני",
+      "help": "הקישור נוצר כאן ואפשר לשלוח אותו בהודעה. תוקפו שבעה ימים.",
+      "email": "הדוא״ל של ההורה השני",
+      "create": "{genderForm, select, feminine {צרי קישור} masculine {צור קישור} other {צרו קישור}}",
+      "linkTitle": "הקישור מוכן",
+      "linkHelp": "הקישור מוצג פעם אחת בלבד — מה שנשמר אצלנו הוא רק גיבוב שלו.",
+      "copy": "{genderForm, select, feminine {העתיקי} masculine {העתק} other {העתיקו}}",
+      "pending": "ממתין: {email}",
+      "accepted": "אושר: {email}",
+      "revoked": "בוטל: {email}",
+      "revoke": "{genderForm, select, feminine {בטלי הזמנה} masculine {בטל הזמנה} other {בטלו הזמנה}}",
+      "none": "אין הזמנות פתוחות.",
+      "invalidEmail": "הדוא״ל אינו בפורמט תקין."
+    }
+  },
+  "join": {
+    "title": "הזמנה לקֵן",
+    "body": "ההזמנה מצרפת אתכם לבית אחד עם רשימה אחת.",
+    "accept": "{genderForm, select, feminine {הצטרפי} masculine {הצטרף} other {הצטרפו}}",
+    "signInFirst": "כדי להצטרף צריך חשבון. אחרי הכניסה נחזור לכאן.",
+    "invalid": "הקישור אינו תקף — ייתכן שפג תוקפו, שבוטל, או שכבר נעשה בו שימוש.",
+    "taken": "החשבון הזה כבר משויך לבית. בגרסה הזו אפשר להיות בבית אחד בלבד."
+  },
   "errors": {
     "notFoundTitle": "הדף לא נמצא",
     "notFoundBody": "הקישור כנראה שונה או שפג תוקפו.",
     "backHome": "{genderForm, select, feminine {חזרי לדף הבית} masculine {חזור לדף הבית} other {חזרו לדף הבית}}"
-  },
-  "harness": {
-    "windows": "חלון הזמן של משימה",
-    "evidence": "רמת הראיות",
-    "note": "דף הדגמה לשלב 2. מסכי האונבורדינג ו⁠\"היום\" מחליפים אותו בשלב 5."
   }
 }
