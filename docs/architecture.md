@@ -21,14 +21,14 @@ TypeScript everywhere except the watcher. Pin the latest stable version **that t
 | Web app       | Next.js App Router, React Server Components, Server Actions           | UI, API routes, the `/mcp` route                                              |
 | UI            | Tailwind CSS, shadcn/ui (Radix), lucide icons                         | Accessible primitives, RTL via the Radix direction provider                   |
 | i18n          | next-intl (ICU messages)                                              | Hebrew and English, gender forms, locale routing `/he`, `/en`                 |
-| PWA           | Serwist                                                               | Service worker, offline emergency card, install prompt                        |
+| PWA           | Serwist (`@serwist/turbopack`), web app manifest                      | Service worker, offline page, install; the offline emergency card at step 7   |
 | Validation    | zod                                                                   | One schema per input, shared by UI, API, MCP and KB                           |
 | Data          | Supabase: Postgres, Auth, Realtime, Storage, pg\_cron, Vault          | Data, sign-in, partner sync, files, reminders, per-household keys             |
 | DB access     | supabase-js with the user's JWT; SQL migrations; generated types      | RLS always applies; types regenerate from the schema                          |
 | Dates         | @hebcal/core (engine dates are hand-rolled on ISO strings, UTC only)  | Gregorian windows, Hebrew dates, Shabbat                                      |
 | MCP           | @modelcontextprotocol/sdk (Streamable HTTP), OAuth 2.1                | Remote MCP server with scoped tokens                                          |
 | AI            | @anthropic-ai/sdk, prompt caching                                     | Coach, watcher diff analysis                                                  |
-| Notifications | web-push (VAPID), Resend (email), ICS generator                       | Push, Sunday digest, calendar feed                                            |
+| Notifications | web-push (VAPID), Resend (email), own RFC 5545 writer (`lib/ics.ts`)  | Push and Sunday digest (step 6b), private calendar feed (step 6a)             |
 | Watcher       | Python 3, httpx, trafilatura, PyGithub                                | Fetch, extract, diff, open PRs                                                |
 | Tests         | Vitest, pgTAP, Playwright, MSW                                        | Engine, RLS, end-to-end flows, API mocks                                      |
 | Quality       | ESLint, Prettier, typescript-eslint, Knip (dead code)                 | Rules enforced by tools, not by prompts                                       |
@@ -41,36 +41,38 @@ Resolved and verified against the registries on 2026-11-07, at scaffold time.
 These are the exact versions in `pnpm-lock.yaml`; Dependabot proposes changes
 weekly and a human merges them. Three rows were added later, at step 5a, and
 their "latest" column was re-checked on 2026-11-15: `@playwright/test`,
-`eslint-config-next` and `@supabase/ssr`.
+`eslint-config-next` and `@supabase/ssr`. Two more changed at step 6a and were
+re-checked on 2026-11-19: Serwist, now `@serwist/turbopack`, and esbuild.
 
-| Package                        | Pinned                  | Latest at pinning | Why not latest                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| ------------------------------ | ----------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Node                           | 24 LTS (Krypton)        | 26 LTS (Lithium)  | Krypton has a year of field use; every peer range accepts it                                                                                                                                                                                                                                                                                                                                                                                |
-| pnpm                           | 12.18.0                 | 12.18.0           | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| **TypeScript**                 | **6.0.3**               | **7.0.2**         | **TypeScript 7 ships no compiler API, so `typescript-eslint` declares `typescript <6.1.0` and cannot load it. Latest means no lint at all. ADR-0002**                                                                                                                                                                                                                                                                                       |
-| ESLint                         | 10.15.0                 | 10.15.0           | flat config; `next lint` was removed in Next.js 16                                                                                                                                                                                                                                                                                                                                                                                          |
-| typescript-eslint              | 8.72.2                  | 8.72.2            | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Next.js                        | 16.4.6                  | 16.4.6            | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| React / React DOM              | 19.3.1                  | 19.3.1            | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Tailwind CSS                   | 4.3.5                   | 4.3.5             | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| next-intl                      | 4.14.9                  | 4.14.9            | peers `next ^16`                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| Serwist (`@serwist/next`)      | 9.5.13                  | 9.5.13            | peers `next >=14`; the Turbopack interaction is a step 6 risk                                                                                                                                                                                                                                                                                                                                                                               |
-| zod                            | 4.6.7                   | 4.6.7             | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Vitest                         | 5.1.0                   | 5.1.0             | engines `^22.12 \|\| ^24 \|\| >=26`                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `@playwright/test`             | **1.63.0**              | 1.65.1            | Arrived at step 5a with 21 end-to-end tests. Every Playwright release expects a particular browser build, and 1.63.0 is the release whose Chromium the build environment already carries — so the suite runs there with `PLAYWRIGHT_BROWSERS_PATH` pointed at it and no download. CI installs its own Chromium with `playwright install --with-deps chromium`, so the pin costs nothing there. Revisit when the environment's browser moves |
-| `eslint-config-next`           | 16.4.6                  | 16.4.6            | Added at step 5a; it is what brings jsx-a11y and react-hooks. Kept level with `next` itself, because the config carries `@next/eslint-plugin-next` from the same release and a lint plugin ahead of the framework enforces rules about code that has not shipped                                                                                                                                                                            |
-| `@supabase/ssr`                | 0.12.7                  | 0.12.7            | Added at step 5a: the cookie-aware client, which is how a session reaches a cookie store. Restricted to `apps/web/lib/services` by the same lint rule as `@supabase/supabase-js`                                                                                                                                                                                                                                                            |
-| `@modelcontextprotocol/sdk`    | 1.32.2                  | 1.32.2            | no 2.x line exists on npm                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `@supabase/supabase-js`        | 2.119.0                 | 2.119.0           | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Supabase CLI                   | 3.1.0                   | 3.1.0             | local by default; ADR-0003                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `@anthropic-ai/sdk`            | 1.6.0                   | 1.6.0             | added at step 11 with the coach                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `@hebcal/core`                 | 6.16.0                  | 6.16.0            | added at step 4                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| date-fns                       | **not used**            | 4.4.0             | The engine hand-rolls its date arithmetic on ISO strings in UTC, so no local-time call can exist in it. A general date library makes a `Date` with a time easy to reach for, and that is the one bug this package cannot afford                                                                                                                                                                                                             |
-| Prettier                       | 3.10.1                  | 3.10.1            | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| knip                           | 6.45.1                  | 6.45.1            | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Python (watcher)               | 3.13                    | 3.13              | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| httpx / trafilatura / PyGithub | 0.28.1 / 2.3.1 / 2.10.0 | same              | added at step 13                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| ruff / pytest                  | 0.17.4 / 9.2.0          | same              | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Package                          | Pinned                  | Latest at pinning | Why not latest                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| -------------------------------- | ----------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Node                             | 24 LTS (Krypton)        | 26 LTS (Lithium)  | Krypton has a year of field use; every peer range accepts it                                                                                                                                                                                                                                                                                                                                                                                |
+| pnpm                             | 12.18.0                 | 12.18.0           | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| **TypeScript**                   | **6.0.3**               | **7.0.2**         | **TypeScript 7 ships no compiler API, so `typescript-eslint` declares `typescript <6.1.0` and cannot load it. Latest means no lint at all. ADR-0002**                                                                                                                                                                                                                                                                                       |
+| ESLint                           | 10.15.0                 | 10.15.0           | flat config; `next lint` was removed in Next.js 16                                                                                                                                                                                                                                                                                                                                                                                          |
+| typescript-eslint                | 8.72.2                  | 8.72.2            | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Next.js                          | 16.4.6                  | 16.4.6            | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| React / React DOM                | 19.3.1                  | 19.3.1            | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Tailwind CSS                     | 4.3.5                   | 4.3.5             | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| next-intl                        | 4.14.9                  | 4.14.9            | peers `next ^16`                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `@serwist/turbopack` / `serwist` | 9.5.13                  | 9.5.15            | Replaced `@serwist/next` at step 6a. It builds the service worker with esbuild inside a Route Handler at `next build`, so no webpack config exists, which Next.js 16 would refuse. 9.5.13 is the version scaffolded with `@serwist/next` and carried across; 9.5.14 and 9.5.15 were published on 2026-11-16 and 2026-11-17 and are Dependabot's to propose                                                                                  |
+| esbuild                          | 0.28.2                  | 0.28.2            | Added at step 6a as a direct devDependency of `apps/web`: `@serwist/turbopack` declares it as a peer and bundles `worker/sw.ts` with it. Its install script stays denied in `allowBuilds`; the platform binary arrives as an optional package                                                                                                                                                                                               |
+| zod                              | 4.6.7                   | 4.6.7             | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Vitest                           | 5.1.0                   | 5.1.0             | engines `^22.12 \|\| ^24 \|\| >=26`                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `@playwright/test`               | **1.63.0**              | 1.65.1            | Arrived at step 5a with 21 end-to-end tests. Every Playwright release expects a particular browser build, and 1.63.0 is the release whose Chromium the build environment already carries — so the suite runs there with `PLAYWRIGHT_BROWSERS_PATH` pointed at it and no download. CI installs its own Chromium with `playwright install --with-deps chromium`, so the pin costs nothing there. Revisit when the environment's browser moves |
+| `eslint-config-next`             | 16.4.6                  | 16.4.6            | Added at step 5a; it is what brings jsx-a11y and react-hooks. Kept level with `next` itself, because the config carries `@next/eslint-plugin-next` from the same release and a lint plugin ahead of the framework enforces rules about code that has not shipped                                                                                                                                                                            |
+| `@supabase/ssr`                  | 0.12.7                  | 0.12.7            | Added at step 5a: the cookie-aware client, which is how a session reaches a cookie store. Restricted to `apps/web/lib/services` by the same lint rule as `@supabase/supabase-js`                                                                                                                                                                                                                                                            |
+| `@modelcontextprotocol/sdk`      | 1.32.2                  | 1.32.2            | no 2.x line exists on npm                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `@supabase/supabase-js`          | 2.119.0                 | 2.119.0           | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Supabase CLI                     | 3.1.0                   | 3.1.0             | local by default; ADR-0003                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `@anthropic-ai/sdk`              | 1.6.0                   | 1.6.0             | added at step 11 with the coach                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `@hebcal/core`                   | 6.16.0                  | 6.16.0            | added at step 4                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| date-fns                         | **not used**            | 4.4.0             | The engine hand-rolls its date arithmetic on ISO strings in UTC, so no local-time call can exist in it. A general date library makes a `Date` with a time easy to reach for, and that is the one bug this package cannot afford                                                                                                                                                                                                             |
+| Prettier                         | 3.10.1                  | 3.10.1            | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| knip                             | 6.45.1                  | 6.45.1            | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Python (watcher)                 | 3.13                    | 3.13              | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| httpx / trafilatura / PyGithub   | 0.28.1 / 2.3.1 / 2.10.0 | same              | added at step 13                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ruff / pytest                    | 0.17.4 / 9.2.0          | same              | —                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 
 **Supply chain.** `pnpm-workspace.yaml` sets `minimumReleaseAge: 1440`, so no
 version published in the last 24 hours is installable — a compromised publish is
@@ -108,7 +110,7 @@ flowchart TB
   subgraph Vercel["Vercel"]
     WEB["Next.js app<br/>pages, server actions"]
     MCP["/mcp route<br/>OAuth 2.1"]
-    ICS["/ics route<br/>hashed token"]
+    ICS["/api/ics/[token]<br/>no session, anon"]
     SVC["Service layer<br/>+ engine"]
   end
   subgraph Supabase["Supabase, Frankfurt"]
@@ -116,7 +118,7 @@ flowchart TB
     PG[("Postgres + RLS")]
     RT["Realtime"]
     ST["Storage"]
-    CRON["pg_cron"]
+    CRON["pg_cron<br/>reminder job, step 6b"]
   end
   subgraph GitHub["GitHub"]
     REPO["Repo<br/>code + KB YAML"]
@@ -149,7 +151,40 @@ flowchart TB
   WATCH --> REPO
 ```
 
-Dashed arrows are pushes to the device. Only the watcher and CI hold the service-role key; the app always talks to Postgres with the signed-in user's token.
+Dashed arrows are pushes to the device. Only the watcher and CI hold the service-role key. The app talks to Postgres with the signed-in user's token, with one exception: a calendar's servers fetch the feed with no session, so `/api/ics/[token]` calls the single function `calendar_feed_inputs(token)` as `anon`, with the publishable key ([ADR-0009](adr/0009-token-scoped-reads-without-a-session.md)). How the step 6b reminder job reads every household is still open; it will not be the service-role key on a request path.
+
+### What the browser keeps, and what it may run
+
+**The service worker caches nothing a family owns.** `worker/sw.ts` precaches
+the build's content-hashed assets and the two offline pages, `/he/offline` and
+`/en/offline`, and nothing else. Every navigation is network-only; with no
+network the visitor gets the offline page in their language, never a stale
+Today. Serwist's `defaultCache` is not used because it caches HTML and RSC
+payloads, which here means the checklist, and registration sets
+`cacheOnNavigation` off for the same reason. The worker registers in production
+only. Health data at rest on a phone is a decision step 7 makes, item by item,
+for the emergency card.
+
+**The worker is built without webpack.** `@serwist/turbopack` bundles
+`worker/sw.ts` with esbuild inside the Route Handler at `app/serwist/[path]`
+during `next build` and serves it at `/serwist/sw.js`. Next.js 16 refuses a
+custom webpack config, which is what `@serwist/next` needed (ADR-0004).
+
+**The Content-Security-Policy is built per request.** `proxy.ts` mints a
+128-bit nonce, `lib/csp.ts` builds the policy around it, and the header goes on
+the request handed to next-intl — Next reads the nonce from there and stamps it
+on every script it emits — and on the response. `script-src` is `'self'`, the
+nonce and `'strict-dynamic'`, with no `'unsafe-inline'`; only the development
+build adds `'unsafe-eval'`. `style-src` allows `'unsafe-inline'`: Next.js,
+next/font and React write inline `style` attributes a nonce cannot cover, and an
+injected style can restyle a page but cannot run code or read data. That is a
+named trade. `connect-src` names the Supabase origin and its WebSocket for
+realtime; `frame-ancestors` is `'none'`. A page that needs a nonce cannot be
+prerendered, which is why the offline page renders per request. API routes,
+`/api/ics/[token]` among them, are outside the proxy and carry no CSP; the feed
+returns `text/calendar` with `private, no-store` and `noindex`, and a database
+failure is a bare 503 with the same headers rather than an error page, because
+the path holds the token.
 
 ## Use cases
 
@@ -418,6 +453,12 @@ classDiagram
     +Date expiresAt
     +revoke()
   }
+  class CalendarFeed {
+    +string tokenHash
+    +Locale locale
+    +Date expiresAt
+    +revoke()
+  }
   class McpClient {
     +string name
     +List~Scope~ scopes
@@ -436,6 +477,7 @@ classDiagram
   Household "1" --> "*" TaskState
   Household "1" --> "*" InventoryItem
   Household "1" --> "*" ShareGrant
+  Household "1" --> "*" CalendarFeed
   Household "1" --> "*" McpClient
   Household "1" --> "*" AuditEntry
   KbItem *-- Window
@@ -573,7 +615,9 @@ KB version it was made under, who made it and when. It is the one table in the
 `supabase_realtime` publication, so the other parent's screen can follow a tick.
 `audit_log` carries who did what, and an `actor_kind = 'mcp'` row must name its
 client — "revoke all AI access" at step 10 has to be able to show the parent what
-that client did.
+that client did. `calendar_feed` carries one row per private calendar link: the
+SHA-256 hash of its token, the locale its titles are written in, who made it,
+and when it expires (a year on) or was revoked.
 
 **There is no `task_instance` table, and that is deliberate.** A window is day
 offsets from an anchor, so `@kenn/engine` materialises every window at read time
@@ -622,7 +666,7 @@ writes `revoked_at`, and removal is archival by hard rule 5. Where only some
 columns may change — a member's own language, an invite's `revoked_at` — a
 column privilege says so, because RLS filters rows and cannot express that.
 
-A pgTAP test per table signs in as a member of household A and asserts zero rows from household B, for select, insert, update and delete — and `tests/no_delete_policies.sql` asserts what a member cannot do to their **own** household's rows, which is the question that went unasked until step 5a and is where both real holes were. A new table without its test fails CI. Eight files, 94 assertions.
+A pgTAP test per table signs in as a member of household A and asserts zero rows from household B, for select, insert, update and delete — and `tests/no_delete_policies.sql` asserts what a member cannot do to their **own** household's rows, which is the question that went unasked until step 5a and is where both real holes were. A new table without its test fails CI. Nine files, 115 assertions.
 
 **One table departs from that pattern: `audit_log` is append-only.** It has a
 select policy and an insert policy, both `is_member(household_id)`, and
@@ -634,9 +678,39 @@ their **own** household's history, which is the one place in this schema where
 the positive case is a refusal. A second table claiming the same exemption needs
 its own ADR.
 
+**A second table departs further: nobody writes `calendar_feed` directly.**
+`authenticated` and `anon` hold no insert, update or delete privilege on it, and
+three restrictive `false` policies stand behind that, so a later `grant all`
+still opens no write path. A member may select every column except
+`token_hash`. Everything else is a `SECURITY DEFINER` function:
+
+| Function                                  | Callable by             | Does                                                                                                                                                                                                                  |
+| ----------------------------------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `create_calendar_feed(household, locale)` | `authenticated`         | Mints 256 random bits, stores the hash, revokes the caller's previous live feed, audits — one transaction. Returns the token once                                                                                     |
+| `revoke_calendar_feed(feed)`              | `authenticated`         | Sets `revoked_at` and audits in the same transaction. One error for "no such feed" and "not yours"                                                                                                                    |
+| `calendar_feed_inputs(token)`             | `anon`, `authenticated` | For a live token whose creator is still a member: a per-feed UID salt, the feed's locale, the dating method and the one date it uses, the profile, and the ids of decided items without their state. `null` otherwise |
+
+The third is the only function `anon` may execute. Supabase's base schema
+grants execute on every function in `public` to `anon` by name, so a
+`revoke ... from public` leaves it standing; the step 6a security review found
+`anon` able to call every member-only function, held back by one `if` on
+`auth.uid()` in each body. Each member-only function now revokes it from `anon`
+by name, and the default privileges no longer grant it, so a new function `anon`
+may call has to say so. `calendar_feed_inputs()` is reachable through PostgREST
+by anyone holding a token, so its result is exactly what a leaked token grants.
+The profile is returned whole, because `applies_if` can test any of it and a
+narrower list kept in SQL would drift from the KB; that is the residual
+exposure. It returns the engine's inputs, not windows: `apps/web` derives those with `composeTasks()`, the function the
+Checklist uses, so the two cannot disagree. This is the shape ADR-0008
+prescribes for every household write at step 9, used here from the first
+migration; the reasoning for the sessionless read is
+[ADR-0009](adr/0009-token-scoped-reads-without-a-session.md).
+`tests/calendar_feed.sql` holds 21 assertions, including what a member cannot do
+to their own feed and what `anon` can and cannot reach.
+
 ## Task lifecycle
 
-Time moves a task between states by itself; only people or MCP clients mark it done. The four time states are computed from the window on every read and none of them is stored — `task_state` holds the decision and nothing else (ADR-0008). Reminders fire on two transitions only: when a window opens, and 3 days before it closes (step 6).
+Time moves a task between states by itself; only people or MCP clients mark it done. The four time states are computed from the window on every read and none of them is stored — `task_state` holds the decision and nothing else (ADR-0008). Reminders fire on two transitions only: when a window opens, and 3 days before it closes. The calendar feed carries them as alarms at 09:00 on those two days (step 6a); push and the digest follow at step 6b. A done or skipped task leaves the feed, and an overdue one stays without alarms.
 
 ```mermaid
 stateDiagram-v2
@@ -674,14 +748,23 @@ kenn/
 │       ├── CLAUDE.md             # app-specific rules (RSC, server actions, i18n)
 │       ├── app/[locale]/         # he / en routes: sign-in, join, onboarding
 │       ├── app/[locale]/(app)/   # signed-in, force-dynamic: today, checklist, household
+│       ├── app/[locale]/offline/ # what the service worker shows with no network
 │       ├── app/api/mcp/          # remote MCP server (Streamable HTTP)
 │       ├── app/api/oauth/        # OAuth 2.1 endpoints for MCP clients
-│       ├── app/api/ics/          # calendar feed
+│       ├── app/api/ics/[token]/  # private calendar feed: no session, token-scoped
+│       ├── app/serwist/[path]/   # builds worker/sw.ts with esbuild, serves /serwist/sw.js
+│       ├── app/manifest.ts       # web app manifest; colours read from tokens.css
+│       ├── proxy.ts              # locale, per-request CSP nonce, session refresh
+│       ├── worker/sw.ts          # service worker: build assets + offline pages only
 │       ├── lib/services/         # the service layer: the only DB caller
 │       ├── lib/schemas/          # one zod schema per input, shared by UI and actions
 │       ├── lib/today.ts          # the only clock in the app (Asia/Jerusalem)
+│       ├── lib/csp.ts            # the Content-Security-Policy, built around a nonce
+│       ├── lib/ics.ts            # RFC 5545 writer, pure
 │       ├── lib/coach/            # context builder, red-flag guard, proposals
 │       ├── messages/             # he.json, en.json (ICU)
+│       ├── public/icons/         # PNG app icons, generated and committed
+│       ├── scripts/gen-icons.mjs # renders the icons from one SVG and tokens.css
 │       └── e2e/                  # Playwright tests
 ├── packages/
 │   ├── engine/                   # pure TS: anchors, windows, rules, materialize()
@@ -724,24 +807,24 @@ The split is deliberate: `engine` and `kb` have no dependency on Next.js or Supa
 
 Every change is a branch and a PR; `main` is always deployable and deploys itself. Database changes ship as migrations in the same PR as the code that needs them.
 
-| Command                | Does                                                                                                                                                                                      |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm i`               | Install all workspaces                                                                                                                                                                    |
-| `pnpm db:start`        | Local Supabase in Docker, migrations applied, `seed.sql` loaded                                                                                                                           |
-| `pnpm dev`             | Next.js on localhost against local Supabase                                                                                                                                               |
-| `pnpm db:new <name>`   | New empty migration file                                                                                                                                                                  |
-| `pnpm db:types`        | Regenerate `packages/db/types.ts` from the schema                                                                                                                                         |
-| `pnpm test`            | Vitest: the engine, the service layer against a fake client, the clock module, and the repository scans                                                                                   |
-| `pnpm e2e`             | Playwright against the local app                                                                                                                                                          |
-| `pnpm db:test`         | pgTAP: RLS per table, seven files and 76 assertions                                                                                                                                       |
-| `pnpm kb:build`        | Compile `packages/kb/content` into `generated/items.json`, which is committed                                                                                                             |
-| `pnpm dev:env`         | Write `apps/web/.env.local` from `supabase status`, so no local key enters git                                                                                                            |
-| `pnpm kb:validate`     | zod-validate every KB YAML, check locales and sources                                                                                                                                     |
-| `pnpm docs:gen`        | Regenerate the ER diagram, KB catalog and MCP tool list                                                                                                                                   |
-| `pnpm check`           | All of the above that CI runs, in one go                                                                                                                                                  |
-| `pnpm check:twice`     | Runs the gate twice and compares a hash of every tracked file, so a non-idempotent generator fails here rather than on the next run                                                       |
-| `pnpm check:private`   | Refuses real names, real email addresses and key material. Contains no denylist of names — it reads the clone's git identity at runtime, so no name is ever committed to enforce the rule |
-| `pnpm check:prerender` | Reads `prerender-manifest.json` after the build and fails if a household route was prerendered. A comment claiming a page is dynamic is not evidence; the manifest is                     |
+| Command                | Does                                                                                                                                                                                                                                                           |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm i`               | Install all workspaces                                                                                                                                                                                                                                         |
+| `pnpm db:start`        | Local Supabase in Docker, migrations applied, `seed.sql` loaded                                                                                                                                                                                                |
+| `pnpm dev`             | Next.js on localhost against local Supabase                                                                                                                                                                                                                    |
+| `pnpm db:new <name>`   | New empty migration file                                                                                                                                                                                                                                       |
+| `pnpm db:types`        | Regenerate `packages/db/types.ts` from the schema                                                                                                                                                                                                              |
+| `pnpm test`            | Vitest: the engine, the service layer against a fake client, the clock module, and the repository scans                                                                                                                                                        |
+| `pnpm e2e`             | Playwright against the local app                                                                                                                                                                                                                               |
+| `pnpm db:test`         | pgTAP: RLS per table, nine files and 115 assertions                                                                                                                                                                                                            |
+| `pnpm kb:build`        | Compile `packages/kb/content` into `generated/items.json`, which is committed                                                                                                                                                                                  |
+| `pnpm dev:env`         | Write `apps/web/.env.local` from `supabase status`, so no local key enters git                                                                                                                                                                                 |
+| `pnpm kb:validate`     | zod-validate every KB YAML, check locales and sources                                                                                                                                                                                                          |
+| `pnpm docs:gen`        | Regenerate the ER diagram, KB catalog and MCP tool list                                                                                                                                                                                                        |
+| `pnpm check`           | All of the above that CI runs, in one go                                                                                                                                                                                                                       |
+| `pnpm check:twice`     | Runs the gate twice and compares a hash of every tracked file, so a non-idempotent generator fails here rather than on the next run                                                                                                                            |
+| `pnpm check:private`   | Refuses real names, real email addresses and key material. Contains no denylist of names — it reads the clone's git identity at runtime, so no name is ever committed to enforce the rule                                                                      |
+| `pnpm check:prerender` | Reads `prerender-manifest.json` after the build and fails on any prerendered route not on its allow-list: Next's error pages, the manifest and the service worker, each with its reason. A comment claiming a page is dynamic is not evidence; the manifest is |
 
 ```mermaid
 flowchart LR
@@ -959,16 +1042,16 @@ against a registry or current vendor documentation, not from memory. Where a
 correction had a real trade-off it became an ADR, and the ADR is the long form —
 it is not restated here.
 
-| #   | Correction                                                                                                                                                                                | Where the reasoning lives                                    |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| 1   | TypeScript is pinned to 6.0.3, not the latest 7.0.2: TypeScript 7 ships no compiler API, so `typescript-eslint` refuses to load it and "pin the latest" would have meant no linter at all | [ADR-0002](adr/0002-pin-typescript-6-for-lint-support.md)    |
-| 2   | `next lint` was removed in Next.js 16, so ESLint runs directly from the repository root over every workspace                                                                              | "Technology stack", above                                    |
-| 3   | Next.js 16 is Turbopack-only and fails the build on a custom webpack config, which is what Serwist needs — the known risk at step 6                                                       | [ADR-0004](adr/0004-nextjs-over-sveltekit.md)                |
-| 4   | Supabase CLI v3 is local by default, so a bare `db push` can no longer reach production                                                                                                   | [ADR-0003](adr/0003-supabase-cli-v3-conventions.md)          |
-| 5   | Permission `deny` rules are guardrails, not a security boundary                                                                                                                           | `.claude/README.md`, and `CLAUDE.md`                         |
-| 6   | `docs-drift.yml`, `deploy.yml` and `watcher.yml` are deliberately deferred: a workflow that can only pass vacuously reads as a gate it is not                                             | steps 1, 5b and 13 in [`plans/roadmap.md`](plans/roadmap.md) |
+| #   | Correction                                                                                                                                                                                                                                  | Where the reasoning lives                                    |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| 1   | TypeScript is pinned to 6.0.3, not the latest 7.0.2: TypeScript 7 ships no compiler API, so `typescript-eslint` refuses to load it and "pin the latest" would have meant no linter at all                                                   | [ADR-0002](adr/0002-pin-typescript-6-for-lint-support.md)    |
+| 2   | `next lint` was removed in Next.js 16, so ESLint runs directly from the repository root over every workspace                                                                                                                                | "Technology stack", above                                    |
+| 3   | Next.js 16 is Turbopack-only and fails the build on a custom webpack config, which is what `@serwist/next` needs. Resolved at step 6a: `@serwist/turbopack` builds the worker with esbuild in a Route Handler, and no webpack config exists | [ADR-0004](adr/0004-nextjs-over-sveltekit.md)                |
+| 4   | Supabase CLI v3 is local by default, so a bare `db push` can no longer reach production                                                                                                                                                     | [ADR-0003](adr/0003-supabase-cli-v3-conventions.md)          |
+| 5   | Permission `deny` rules are guardrails, not a security boundary                                                                                                                                                                             | `.claude/README.md`, and `CLAUDE.md`                         |
+| 6   | `docs-drift.yml`, `deploy.yml` and `watcher.yml` are deliberately deferred: a workflow that can only pass vacuously reads as a gate it is not                                                                                               | steps 1, 5b and 13 in [`plans/roadmap.md`](plans/roadmap.md) |
 
-Two corrections are still open rather than settled:
+One correction is still open rather than settled:
 
 - **"Use your auth provider's OAuth server, if it supports MCP clients" probably
   will not hold.** The MCP authorization spec needs an OAuth 2.1 authorization
@@ -978,11 +1061,12 @@ Two corrections are still open rather than settled:
   server — is right; the named fallback is probably unavailable. A step 9
   decision, tracked in [`decisions.md`](decisions.md).
 
-- **`apps/web` declares dependencies it does not yet import.** Nearly settled.
-  They were declared so the lockfile proves the whole version matrix resolves
-  together from the first commit, and `knip.json` parks the unimported ones in
-  `ignoreDependencies`. Each entry comes off with the step that starts using it:
-  step 2 took `next-intl`, `tailwindcss`, `@tailwindcss/postcss` and `@kenn/ui`,
-  and step 5a took `@supabase/supabase-js`, `zod`, `@kenn/db`, `@kenn/engine`
-  and `@kenn/kb`. Only `serwist` and `@serwist/next` remain, for step 6. An
-  entry still there at Gate A means a dependency nothing uses.
+A second, **`apps/web` declared dependencies it did not yet import**, was
+settled at step 6a. They were declared so the lockfile proves the whole version matrix
+resolves together from the first commit, and `knip.json` parked the unimported
+ones in `ignoreDependencies`. Each entry came off with the step that started
+using it: step 2 took `next-intl`, `tailwindcss`, `@tailwindcss/postcss` and
+`@kenn/ui`, step 5a took `@supabase/supabase-js`, `zod`, `@kenn/db`,
+`@kenn/engine` and `@kenn/kb`, and step 6a took `serwist` and replaced
+`@serwist/next` with `@serwist/turbopack`. `knip.json` now has no
+`ignoreDependencies` at all.
