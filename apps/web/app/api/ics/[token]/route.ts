@@ -13,8 +13,9 @@
  */
 
 import { calendarFeedFor } from '@/lib/services/calendar.ts';
-import { todayInIsrael } from '@/lib/today.ts';
+import { nowTimestamp, todayInIsrael } from '@/lib/today.ts';
 import { getTranslations } from 'next-intl/server';
+import { ZodError } from 'zod';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,6 +23,13 @@ const PRIVATE = {
   'Cache-Control': 'private, no-store, max-age=0',
   'X-Robots-Tag': 'noindex, nofollow',
 };
+
+function describe(error: unknown): { name: string; paths?: string[] } {
+  if (error instanceof ZodError) {
+    return { name: error.name, paths: error.issues.map((issue) => issue.path.join('.')) };
+  }
+  return { name: error instanceof Error ? error.name : typeof error };
+}
 
 export async function GET(
   request: Request,
@@ -37,8 +45,20 @@ export async function GET(
 
   let body: string | null;
   try {
-    body = await calendarFeedFor(token, todayInIsrael(), origin, (l) => names[l]);
-  } catch {
+    body = await calendarFeedFor(
+      token,
+      todayInIsrael(),
+      nowTimestamp(),
+      origin,
+      (l) => names[l],
+    );
+  } catch (error) {
+    // Logged without values and without the token — the path holds the
+    // secret — but logged: a renamed column fails the zod parse on every
+    // fetch, and a permanent 503 that nobody sees is the silent failure the
+    // parse exists to prevent. The name and the issue paths are enough to find
+    // which column moved.
+    console.error('ics feed failed', describe(error));
     // A database failure: a bare 503 with the same headers, never a framework
     // error page — the path holds the token, and the body must say nothing.
     // A calendar retries a 503 later rather than dropping the subscription.

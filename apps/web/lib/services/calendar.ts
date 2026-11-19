@@ -24,6 +24,7 @@ import type { IsoDate, Profile } from '@kenn/engine';
 import type { Locale } from '@kenn/ui';
 import { z } from 'zod';
 import { toIcs, type CalendarEvent } from '../ics.ts';
+import { calendarTokenSchema } from '../schemas/calendar.ts';
 import { assertHuman, type ServiceContext } from './context.ts';
 import { supabaseEnv } from './env.ts';
 import type { Pregnancy } from './pregnancy.ts';
@@ -141,7 +142,9 @@ export function householdInputsFromFeed(feed: FeedInputs): HouseholdInputs {
   const anchor = (p?.anchor ?? null) as IsoDate | null;
   const pregnancy: Pregnancy | null = p
     ? {
-        householdId: feed.uid_salt,
+        // The feed never learns the household id (ADR-0009). composeTasks()
+        // does not read this field; the placeholder says so if anything does.
+        householdId: 'calendar-feed',
         datingMethod: p.dating_method,
         lmp: p.dating_method === 'lmp' ? anchor : null,
         edd: p.dating_method === 'ultrasound' ? anchor : null,
@@ -176,7 +179,10 @@ export function householdInputsFromFeed(feed: FeedInputs): HouseholdInputs {
         decision: 'done' as TaskDecision,
         decidedBy: null,
         decidedAt: null,
-        kbVersion: 0,
+        // The version is not sent, so it must never read as "older than the
+        // current guidance": 0 would make every decided item report
+        // guidanceUpdated — unread by the feed today, believed by anything later.
+        kbVersion: Number.MAX_SAFE_INTEGER,
       },
     ]),
   );
@@ -237,12 +243,14 @@ function anonDb() {
 export async function calendarFeedFor(
   token: string,
   today: IsoDate,
+  /** The instant of the fetch, for DTSTAMP. From lib/today.ts, like `today`. */
+  now: string,
   origin: string,
   calendarName: (locale: Locale) => string,
 ): Promise<string | null> {
   // 64 hex characters is the only shape create_calendar_feed() mints. Anything
   // else is refused before it costs a database round trip.
-  if (!/^[0-9a-f]{64}$/.test(token)) return null;
+  if (!calendarTokenSchema.safeParse(token).success) return null;
 
   const { data, error } = await anonDb().rpc('calendar_feed_inputs', { p_token: token });
   if (error) throw new Error(`calendar feed read failed: ${error.message}`);
@@ -257,5 +265,5 @@ export async function calendarFeedFor(
     `${origin}/${feed.locale}/checklist`,
   );
 
-  return toIcs({ name: calendarName(feed.locale), stamp: today, events });
+  return toIcs({ name: calendarName(feed.locale), stamp: now, events });
 }

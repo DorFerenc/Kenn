@@ -34,8 +34,9 @@ export interface CalendarEvent {
 
 export interface Calendar {
   name: string;
-  /** The day the feed was generated. DTSTAMP is required on every event. */
-  stamp: IsoDate;
+  /** The instant the feed was generated, as a UTC ISO timestamp. DTSTAMP is
+   *  required on every event, and is a date-time, not a date. */
+  stamp: string;
   events: CalendarEvent[];
 }
 
@@ -60,16 +61,14 @@ export function foldLine(line: string): string {
   const out: string[] = [];
   let current = '';
   let bytes = 0;
-  let limit = FOLD_AT;
 
   // Iterating a string yields code points, so a surrogate pair stays whole.
   for (const char of line) {
     const size = encoder.encode(char).length;
-    if (bytes + size > limit) {
+    if (bytes + size > FOLD_AT) {
       out.push(current);
       current = ' ';
       bytes = 1;
-      limit = FOLD_AT;
     }
     current += char;
     bytes += size;
@@ -80,11 +79,21 @@ export function foldLine(line: string): string {
 
 const compact = (date: IsoDate) => date.replaceAll('-', '');
 
-function eventLines(event: CalendarEvent, stamp: IsoDate): string[] {
+/** `2026-11-19T05:10:00.123Z` → `20261119T051000Z` (RFC 5545 §3.3.5, UTC form). */
+export function utcStamp(timestamp: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?Z$/.exec(
+    timestamp,
+  );
+  if (!match) throw new Error(`utcStamp: not a UTC ISO timestamp: ${timestamp}`);
+  const [, y, mo, d, h, mi, se] = match;
+  return `${y}${mo}${d}T${h}${mi}${se}Z`;
+}
+
+function eventLines(event: CalendarEvent, stamp: string): string[] {
   const lines = [
     'BEGIN:VEVENT',
     `UID:${event.uid}`,
-    `DTSTAMP:${compact(stamp)}T000000Z`,
+    `DTSTAMP:${utcStamp(stamp)}`,
     `DTSTART;VALUE=DATE:${compact(event.start)}`,
     `DTEND;VALUE=DATE:${compact(addDays(event.end, 1))}`,
     `SUMMARY:${escapeText(event.title)}`,

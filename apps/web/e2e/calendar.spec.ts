@@ -47,6 +47,8 @@ test('a calendar link serves the household’s windows with no session, until it
   await expect(page.getByText('שמות הבדיקות יופיעו ביומן שלכם')).toBeVisible();
 
   const first = await makeLink(page, 'צרי קישור ליומן');
+  // While the link is on screen there is no button that would revoke it.
+  await expect(page.getByRole('button', { name: /קישור (ליומן|חדש)/ })).toHaveCount(0);
   const feed = await anonymousGet(first);
   expect(feed.status).toBe(200);
   expect(feed.type).toContain('text/calendar');
@@ -58,7 +60,7 @@ test('a calendar link serves the household’s windows with no session, until it
 
   // Making a new link cancels the old one.
   await page.reload();
-  const second = await makeLink(page, 'צרי קישור חדש');
+  const second = await makeLink(page, 'צרי קישור חדש — הקודם יבוטל');
   expect((await anonymousGet(first)).status).toBe(404);
   expect((await anonymousGet(second)).status).toBe(200);
 

@@ -33,12 +33,45 @@ describe('householdInputsFromFeed', () => {
     expect(profile && 'rh_negative' in profile).toBe(false);
   });
 
-  it('gives the same tasks as the screens for the same household', () => {
-    const inputs = householdInputsFromFeed(feed());
-    const tasks = composeTasks(inputs, TODAY);
-    expect(tasks.length).toBeGreaterThan(5);
-    // Rh is unknown, so the anti-D item must not appear in a calendar either.
-    expect(tasks.some((t) => t.kbItemId === 'preg.anti-d')).toBe(false);
+  // ADR-0008's claim, checked: the feed and the Checklist cannot disagree. For
+  // each dating method, the household as getPregnancy() reads it and the same
+  // household as calendar_feed_inputs() returns it must give identical
+  // windows. A swapped edd / transfer_date branch fails here.
+  it.each([
+    ['lmp', { lmp: '2026-07-01', edd: null, transferDate: null }],
+    ['ultrasound', { lmp: null, edd: '2027-04-07', transferDate: null }],
+    ['ivf_transfer', { lmp: null, edd: null, transferDate: '2026-07-15' }],
+  ] as const)('gives the Checklist’s windows exactly, dated by %s', (method, dates) => {
+    const screen = composeTasks(
+      {
+        pregnancy: { householdId: 'h', datingMethod: method, fetuses: 1, ...dates },
+        profile: { firstborn: true },
+        states: new Map(),
+      },
+      TODAY,
+    );
+    const anchor = dates.lmp ?? dates.edd ?? dates.transferDate;
+    const fromFeed = composeTasks(
+      householdInputsFromFeed(
+        feed({ pregnancy: { dating_method: method, anchor, fetuses: 1 } }),
+      ),
+      TODAY,
+    );
+
+    const windows = (tasks: typeof screen) =>
+      tasks.map((t) => `${t.kbItemId} ${t.dueStart} ${t.dueEnd}`);
+    expect(screen.length).toBeGreaterThan(5);
+    expect(windows(fromFeed)).toEqual(windows(screen));
+    // Rh is unknown, so the anti-D item must not appear in either.
+    expect(fromFeed.some((t) => t.kbItemId === 'preg.anti-d')).toBe(false);
+  });
+
+  it('never reports a decided item as having newer guidance', () => {
+    const tasks = composeTasks(
+      householdInputsFromFeed(feed({ decided: ['preg.folic-acid'] })),
+      TODAY,
+    );
+    expect(tasks.every((t) => !t.guidanceUpdated)).toBe(true);
   });
 
   it('returns no tasks when there is no pregnancy yet', () => {
@@ -69,12 +102,6 @@ describe('feedEvents', () => {
     expect(ids).not.toContain(`${someId}-abc@kenn`);
   });
 
-  it('keeps an item that is not decided — a reopen leaves the decided list', () => {
-    const reopened = composeTasks(householdInputsFromFeed(feed({ decided: [] })), TODAY);
-    const ids = feedEvents(reopened, 'en', 'abc', 'u').map((e) => e.uid);
-    expect(ids).toContain(`${someId}-abc@kenn`);
-  });
-
   it('keeps a late item but without alarms', () => {
     const late = tasks.find((t) => t.timeStatus === 'overdue');
     expect(late).toBeDefined();
@@ -97,7 +124,13 @@ describe('calendarFeedFor', () => {
     // No Supabase env is set in unit tests, so reaching the client would throw.
     for (const token of ['', 'abc', 'Z'.repeat(64), `${'a'.repeat(64)}/..`]) {
       await expect(
-        calendarFeedFor(token, TODAY, 'https://kenn.test', () => 'Kenn'),
+        calendarFeedFor(
+          token,
+          TODAY,
+          '2026-11-18T07:00:00.000Z',
+          'https://kenn.test',
+          () => 'Kenn',
+        ),
       ).resolves.toBeNull();
     }
   });

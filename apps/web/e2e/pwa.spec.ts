@@ -103,5 +103,17 @@ test('offline, a page falls back to the offline page and no household page is ca
   await context.setOffline(true);
   await page.goto('/he/checklist').catch(() => undefined);
   await expect(page.getByRole('heading', { name: 'אין חיבור' })).toBeVisible();
+
+  // The offline page's one script has to run from the cache, under the CSP it
+  // was cached with: still offline, Retry reloads — and the worker answers the
+  // reload with the offline page again. A blocked script would do nothing.
+  const reloaded = page.waitForEvent('framenavigated');
+  await page.getByRole('button', { name: 'נסו שוב' }).click();
+  await reloaded;
+  await expect(page.getByRole('heading', { name: 'אין חיבור' })).toBeVisible();
+
+  // Back online, the page asked for is the one that loads.
   await context.setOffline(false);
+  await page.goto('/he/checklist');
+  await expect(page.getByRole('heading', { name: 'הרשימה' })).toBeVisible();
 });

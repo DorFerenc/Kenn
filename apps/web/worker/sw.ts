@@ -33,7 +33,8 @@ declare const self: ServiceWorkerGlobalScope;
 
 /** `/en/...` reads English; everything else falls back to the default locale. */
 function offlinePageFor(url: string): string {
-  return new URL(url).pathname.startsWith('/en') ? '/en/offline' : '/he/offline';
+  // A whole segment: `/entry` is not English.
+  return /^\/en(\/|$)/.test(new URL(url).pathname) ? '/en/offline' : '/he/offline';
 }
 
 const serwist = new Serwist({

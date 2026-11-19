@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { escapeText, foldLine, toIcs, type CalendarEvent } from './ics.ts';
+import { escapeText, foldLine, toIcs, utcStamp, type CalendarEvent } from './ics.ts';
 
 const bytes = (s: string) => new TextEncoder().encode(s).length;
 
@@ -53,8 +53,23 @@ describe('foldLine', () => {
   });
 });
 
+describe('utcStamp', () => {
+  it('writes the UTC date-time form RFC 5545 requires for DTSTAMP', () => {
+    expect(utcStamp('2026-11-19T05:10:00.123Z')).toBe('20261119T051000Z');
+    expect(utcStamp('2026-11-19T05:10:00Z')).toBe('20261119T051000Z');
+  });
+
+  it('refuses a timestamp that is not UTC, rather than mislabelling it', () => {
+    expect(() => utcStamp('2026-11-19T05:10:00+02:00')).toThrow();
+  });
+});
+
 describe('toIcs', () => {
-  const ics = toIcs({ name: 'Kenn', stamp: '2026-11-18', events: [event()] });
+  const ics = toIcs({
+    name: 'Kenn',
+    stamp: '2026-11-18T07:30:15.123Z',
+    events: [event()],
+  });
 
   it('uses CRLF line endings throughout', () => {
     expect(ics.replaceAll('\r\n', '')).not.toMatch(/[\r\n]/);
@@ -66,9 +81,17 @@ describe('toIcs', () => {
     expect(ics).toContain('DTEND;VALUE=DATE:20270125');
   });
 
+  it('stamps every event with the instant of the fetch, in UTC', () => {
+    expect(ics).toContain('DTSTAMP:20261118T073015Z');
+  });
+
   it('carries the UID it was given, so a refresh updates instead of duplicating', () => {
     expect(ics).toContain('UID:preg.nt-scan-abc123@kenn');
-    const again = toIcs({ name: 'Kenn', stamp: '2026-11-19', events: [event()] });
+    const again = toIcs({
+      name: 'Kenn',
+      stamp: '2026-11-19T07:30:15.123Z',
+      events: [event()],
+    });
     expect(again.match(/UID:.*/)?.[0]).toBe(ics.match(/UID:.*/)?.[0]);
   });
 
@@ -77,20 +100,27 @@ describe('toIcs', () => {
     expect(ics).toContain('TRIGGER;RELATED=END:-P3DT15H');
   });
 
-  it('skips the closing reminder when the window is too short for it', () => {
-    const short = toIcs({
+  // The closing alarm fires at 09:00 three days before the last day, so it is
+  // only distinct from the opening alarm when that day is after the first.
+  // Asserted at the boundary, not in the middle of the range.
+  it.each([
+    ['2027-01-12', false],
+    ['2027-01-13', false],
+    ['2027-01-14', true],
+  ])('a window from 2027-01-10 to %s has a closing reminder: %s', (end, expected) => {
+    const ics = toIcs({
       name: 'Kenn',
-      stamp: '2026-11-18',
-      events: [event({ start: '2027-01-10', end: '2027-01-12' })],
+      stamp: '2026-11-18T07:30:15.123Z',
+      events: [event({ start: '2027-01-10', end })],
     });
-    expect(short).toContain('RELATED=START');
-    expect(short).not.toContain('RELATED=END');
+    expect(ics).toContain('RELATED=START');
+    expect(ics.includes('RELATED=END')).toBe(expected);
   });
 
   it('writes no alarm at all when told not to remind', () => {
     const quiet = toIcs({
       name: 'Kenn',
-      stamp: '2026-11-18',
+      stamp: '2026-11-18T07:30:15.123Z',
       events: [event({ remind: false })],
     });
     expect(quiet).not.toContain('VALARM');
@@ -103,7 +133,7 @@ describe('toIcs', () => {
   });
 
   it('writes an empty but valid calendar when nothing is due', () => {
-    const empty = toIcs({ name: 'Kenn', stamp: '2026-11-18', events: [] });
+    const empty = toIcs({ name: 'Kenn', stamp: '2026-11-18T07:30:15.123Z', events: [] });
     expect(empty).toContain('BEGIN:VCALENDAR');
     expect(empty).not.toContain('VEVENT');
   });

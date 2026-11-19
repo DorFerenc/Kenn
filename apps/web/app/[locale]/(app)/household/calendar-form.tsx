@@ -38,16 +38,24 @@ export function CalendarForm({
 
   return (
     <div className="flex flex-col gap-2">
-      <form action={action}>
-        <input type="hidden" name="locale" value={locale} />
-        <button
-          type="submit"
-          disabled={pending}
-          className="bg-accent text-on-accent min-h-(--size-tap) w-full rounded-md px-3 font-medium disabled:opacity-60"
-        >
-          {t(hasLiveFeed ? 'rotate' : 'create', genderValues(genderForm))}
-        </button>
-      </form>
+      {/*
+        While a fresh link is on screen there is no button: the next tap on
+        "create" would revoke the link just pasted into a calendar, and the
+        calendar would stop updating without a word. Reloading the page brings
+        the button back, labelled with what it costs.
+      */}
+      {link ? null : (
+        <form action={action}>
+          <input type="hidden" name="locale" value={locale} />
+          <button
+            type="submit"
+            disabled={pending}
+            className="bg-accent text-on-accent min-h-(--size-tap) w-full rounded-md px-3 font-medium disabled:opacity-60"
+          >
+            {t(hasLiveFeed ? 'rotate' : 'create', genderValues(genderForm))}
+          </button>
+        </form>
+      )}
 
       {link ? (
         <div className="border-border flex flex-col gap-1 rounded-md border p-2">
