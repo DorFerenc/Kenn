@@ -193,5 +193,24 @@
     "notFoundTitle": "Page not found",
     "notFoundBody": "The link has probably changed or expired.",
     "backHome": "Back to the home page"
+  },
+  "calendar": {
+    "feedName": "Kenn",
+    "title": "Add to your calendar",
+    "help": "Every window appears in your calendar as an all-day event. Apple Calendar also shows reminders — the morning a window opens, and three days before it closes. Google Calendar shows the events but ignores reminders in a subscribed calendar.",
+    "privacy": "Test names will appear in your calendar, so your calendar provider sees them too. Anyone holding the link can read them — do not share it.",
+    "howTo": "In Google Calendar: Other calendars → From URL. On iPhone: Settings → Calendar → Accounts → Add Subscribed Calendar.",
+    "create": "Create a calendar link",
+    "rotate": "Create a new link",
+    "linkTitle": "Your calendar link is ready",
+    "linkHelp": "This link is shown once only. Making a new one cancels the old one.",
+    "active": "Active since {created}, valid until {expires}",
+    "none": "No calendar link yet.",
+    "revoke": "Revoke the link"
+  },
+  "offline": {
+    "title": "No connection",
+    "body": "Kenn needs a connection to show your household. None of it is stored on this phone.",
+    "retry": "Try again"
   }
 }

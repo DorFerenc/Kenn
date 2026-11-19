@@ -31,10 +31,20 @@ const MANIFEST = 'apps/web/.next/prerender-manifest.json';
  * exactly the direction that hurts.
  *
  * Inverted, a new route fails this check until somebody declares it public,
- * which is the decision worth making deliberately. Next's own error documents
- * are the only entries, and they render no household data.
+ * which is the decision worth making deliberately. Every entry is code or
+ * metadata that is the same for everyone, and each says why.
  */
-const MAY_BE_PRERENDERED = new Set(['/_not-found', '/_global-error', '/_error']);
+const MAY_BE_PRERENDERED = new Set([
+  '/_not-found',
+  '/_global-error',
+  '/_error',
+  // Step 6a. The install manifest: the app's name, colours and icons.
+  '/manifest.webmanifest',
+  // Step 6a. The service worker, built from worker/sw.ts. It is code, and the
+  // same for everyone; what it caches is decided in that file.
+  '/serwist/[path]',
+  '/serwist/sw.js',
+]);
 
 /** Everything Next lists as prerendered, however it listed it. */
 export function prerenderedRoutes(manifest) {

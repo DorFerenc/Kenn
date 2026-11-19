@@ -1,4 +1,5 @@
 import { isLocale } from '@kenn/ui';
+import { ServiceWorker } from '@/app/service-worker.tsx';
 import { Shell } from '@/app/shell.tsx';
 import { routing } from '@/i18n/routing.ts';
 import type { Metadata } from 'next';
@@ -19,7 +20,13 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'app' });
-  return { title: t('name'), description: t('tagline') };
+  return {
+    title: t('name'),
+    description: t('tagline'),
+    // iOS ignores the manifest's icons and reads this one.
+    icons: { apple: '/icons/apple-touch-icon.png' },
+    appleWebApp: { capable: true, title: t('name'), statusBarStyle: 'default' },
+  };
 }
 
 export default async function LocaleLayout({
@@ -49,7 +56,9 @@ export default async function LocaleLayout({
         render with "No intl context found", which is how this comment came to
         be written.
       */}
-      <NextIntlClientProvider>{children}</NextIntlClientProvider>
+      <NextIntlClientProvider>
+        <ServiceWorker>{children}</ServiceWorker>
+      </NextIntlClientProvider>
     </Shell>
   );
 }
