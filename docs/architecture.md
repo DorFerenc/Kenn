@@ -471,6 +471,8 @@ erDiagram
   AUTH_USERS ||--|{ TASK_STATE : has
   HOUSEHOLD ||--|{ AUDIT_LOG : has
   AUTH_USERS ||--o{ AUDIT_LOG : has
+  HOUSEHOLD ||--|{ CALENDAR_FEED : has
+  AUTH_USERS ||--|{ CALENDAR_FEED : has
   AUDIT_LOG {
     uuid id PK
     uuid household_id FK
@@ -483,6 +485,16 @@ erDiagram
     jsonb before
     jsonb after
     timestamptz created_at
+  }
+  CALENDAR_FEED {
+    uuid id PK
+    uuid household_id FK
+    uuid created_by FK
+    text token_hash
+    text locale
+    timestamptz created_at
+    timestamptz expires_at
+    timestamptz revoked_at
   }
   HOUSEHOLD {
     uuid id PK
