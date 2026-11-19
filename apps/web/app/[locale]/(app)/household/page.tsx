@@ -6,6 +6,7 @@ import {
   revokeInviteAction,
 } from '@/app/[locale]/(app)/actions.ts';
 import { listCalendarFeeds } from '@/lib/services/calendar.ts';
+import { hasPassed } from '@/lib/today.ts';
 import { requireUserContext } from '@/lib/services/context.ts';
 import { currentHouseholdAndMember, householdMembers } from '@/lib/services/household.ts';
 import { listInvites } from '@/lib/services/invites.ts';
@@ -40,7 +41,12 @@ export default async function HouseholdPage({
   const tc = await getTranslations('calendar');
 
   // The caller's own live feed: each parent subscribes their own calendar.
-  const myFeed = feeds.find((feed) => feed.createdBy === me.userId && !feed.revokedAt);
+  // An expired feed is not live: the route already answers 404 for it, and
+  // saying "active" would let a parent trust a calendar that stopped updating.
+  const myFeed = feeds.find(
+    (feed) =>
+      feed.createdBy === me.userId && !feed.revokedAt && !hasPassed(feed.expiresAt),
+  );
 
   const open = invites.filter((invite) => !invite.acceptedAt && !invite.revokedAt);
 

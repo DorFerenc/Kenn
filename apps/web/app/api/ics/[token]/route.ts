@@ -35,7 +35,18 @@ export async function GET(
     en: (await getTranslations({ locale: 'en', namespace: 'calendar' }))('feedName'),
   };
 
-  const body = await calendarFeedFor(token, todayInIsrael(), origin, (l) => names[l]);
+  let body: string | null;
+  try {
+    body = await calendarFeedFor(token, todayInIsrael(), origin, (l) => names[l]);
+  } catch {
+    // A database failure: a bare 503 with the same headers, never a framework
+    // error page — the path holds the token, and the body must say nothing.
+    // A calendar retries a 503 later rather than dropping the subscription.
+    return new Response(null, {
+      status: 503,
+      headers: { ...PRIVATE, 'Retry-After': '3600' },
+    });
+  }
   if (body === null) return new Response(null, { status: 404, headers: PRIVATE });
 
   return new Response(body, {

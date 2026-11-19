@@ -6,13 +6,11 @@ const TODAY = '2026-11-18';
 
 /** What calendar_feed_inputs() returns for a household at about week 20. */
 const feed = (overrides: Record<string, unknown> = {}) => ({
-  household_id: '11111111-0000-0000-0000-000000000001',
+  uid_salt: '11111111-0000-0000-0000-000000000001',
   locale: 'en' as const,
   pregnancy: {
     dating_method: 'lmp' as const,
-    lmp: '2026-07-01',
-    edd: null,
-    transfer_date: null,
+    anchor: '2026-07-01',
     fetuses: 1,
   },
   profile: {
@@ -24,11 +22,7 @@ const feed = (overrides: Record<string, unknown> = {}) => ({
     sex: null,
     feeding_intent: null,
   },
-  decisions: [] as {
-    kb_item_id: string;
-    kb_version: number;
-    state: 'done' | 'skipped' | 'open';
-  }[],
+  decided: [] as string[],
   ...overrides,
 });
 
@@ -68,22 +62,15 @@ describe('feedEvents', () => {
 
   it('drops a done or skipped item, so a handled test is not re-announced', () => {
     const decided = composeTasks(
-      householdInputsFromFeed(
-        feed({ decisions: [{ kb_item_id: someId, kb_version: 1, state: 'done' }] }),
-      ),
+      householdInputsFromFeed(feed({ decided: [someId] })),
       TODAY,
     );
     const ids = feedEvents(decided, 'en', 'abc', 'u').map((e) => e.uid);
     expect(ids).not.toContain(`${someId}-abc@kenn`);
   });
 
-  it('keeps a reopened item', () => {
-    const reopened = composeTasks(
-      householdInputsFromFeed(
-        feed({ decisions: [{ kb_item_id: someId, kb_version: 1, state: 'open' }] }),
-      ),
-      TODAY,
-    );
+  it('keeps an item that is not decided — a reopen leaves the decided list', () => {
+    const reopened = composeTasks(householdInputsFromFeed(feed({ decided: [] })), TODAY);
     const ids = feedEvents(reopened, 'en', 'abc', 'u').map((e) => e.uid);
     expect(ids).toContain(`${someId}-abc@kenn`);
   });

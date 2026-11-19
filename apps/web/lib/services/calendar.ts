@@ -103,14 +103,14 @@ export async function listCalendarFeeds(
  * calendar that a parent trusts.
  */
 const feedInputsSchema = z.object({
-  household_id: z.string().uuid(),
+  /** Per feed, not per household: both parents' calendars stay unlinkable. */
+  uid_salt: z.string().uuid(),
   locale: z.enum(['he', 'en']),
   pregnancy: z
     .object({
       dating_method: z.enum(['lmp', 'ultrasound', 'ivf_transfer']),
-      lmp: z.string().nullable(),
-      edd: z.string().nullable(),
-      transfer_date: z.string().nullable(),
+      /** The one date the dating method uses; the others never leave Postgres. */
+      anchor: z.string().nullable(),
       fetuses: z.number().int(),
     })
     .nullable(),
@@ -125,13 +125,8 @@ const feedInputsSchema = z.object({
       feeding_intent: z.string().nullable(),
     })
     .nullable(),
-  decisions: z.array(
-    z.object({
-      kb_item_id: z.string(),
-      kb_version: z.number().int(),
-      state: z.enum(['done', 'skipped', 'open']),
-    }),
-  ),
+  /** Done or skipped, without saying which: the calendar only needs "decided". */
+  decided: z.array(z.string()),
 });
 
 type FeedInputs = z.infer<typeof feedInputsSchema>;
@@ -142,41 +137,46 @@ type FeedInputs = z.infer<typeof feedInputsSchema>;
  * answer — the rule `getProfile()` keeps for the same reason.
  */
 export function householdInputsFromFeed(feed: FeedInputs): HouseholdInputs {
-  const pregnancy: Pregnancy | null = feed.pregnancy
+  const p = feed.pregnancy;
+  const anchor = (p?.anchor ?? null) as IsoDate | null;
+  const pregnancy: Pregnancy | null = p
     ? {
-        householdId: feed.household_id,
-        datingMethod: feed.pregnancy.dating_method,
-        lmp: feed.pregnancy.lmp as IsoDate | null,
-        edd: feed.pregnancy.edd as IsoDate | null,
-        transferDate: feed.pregnancy.transfer_date as IsoDate | null,
-        fetuses: feed.pregnancy.fetuses,
+        householdId: feed.uid_salt,
+        datingMethod: p.dating_method,
+        lmp: p.dating_method === 'lmp' ? anchor : null,
+        edd: p.dating_method === 'ultrasound' ? anchor : null,
+        transferDate: p.dating_method === 'ivf_transfer' ? anchor : null,
+        fetuses: p.fetuses,
       }
     : null;
 
   let profile: ProfileWrite | null = null;
   if (feed.profile) {
     profile = {};
-    const p = feed.profile;
-    if (p.firstborn !== null) profile.firstborn = p.firstborn;
-    if (p.customs !== null)
-      profile.customs = p.customs as NonNullable<Profile['customs']>;
-    if (p.health_fund !== null)
-      profile.health_fund = p.health_fund as NonNullable<Profile['health_fund']>;
-    if (p.has_supplementary !== null) profile.has_supplementary = p.has_supplementary;
-    if (p.rh_negative !== null) profile.rh_negative = p.rh_negative;
-    if (p.sex !== null) profile.sex = p.sex as NonNullable<Profile['sex']>;
-    if (p.feeding_intent !== null)
-      profile.feeding_intent = p.feeding_intent as NonNullable<Profile['feeding_intent']>;
+    const pr = feed.profile;
+    if (pr.firstborn !== null) profile.firstborn = pr.firstborn;
+    if (pr.customs !== null)
+      profile.customs = pr.customs as NonNullable<Profile['customs']>;
+    if (pr.health_fund !== null)
+      profile.health_fund = pr.health_fund as NonNullable<Profile['health_fund']>;
+    if (pr.has_supplementary !== null) profile.has_supplementary = pr.has_supplementary;
+    if (pr.rh_negative !== null) profile.rh_negative = pr.rh_negative;
+    if (pr.sex !== null) profile.sex = pr.sex as NonNullable<Profile['sex']>;
+    if (pr.feeding_intent !== null)
+      profile.feeding_intent = pr.feeding_intent as NonNullable<
+        Profile['feeding_intent']
+      >;
   }
 
+  // "Decided" is all the feed needs, so the database does not say which way.
   const states = new Map<string, StoredDecision>(
-    feed.decisions.map((d) => [
-      d.kb_item_id,
+    feed.decided.map((id) => [
+      id,
       {
-        decision: d.state as TaskDecision,
+        decision: 'done' as TaskDecision,
         decidedBy: null,
         decidedAt: null,
-        kbVersion: d.kb_version,
+        kbVersion: 0,
       },
     ]),
   );
@@ -213,7 +213,7 @@ export function feedEvents(
     });
 }
 
-/** Hex SHA-256, truncated: a UID suffix that does not publish the household id. */
+/** Hex SHA-256 of the feed's salt, truncated: a stable UID suffix per feed. */
 async function shortHash(value: string): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
   return [...new Uint8Array(digest)]
@@ -253,7 +253,7 @@ export async function calendarFeedFor(
   const events = feedEvents(
     tasks,
     feed.locale,
-    await shortHash(feed.household_id),
+    await shortHash(feed.uid_salt),
     `${origin}/${feed.locale}/checklist`,
   );
 
