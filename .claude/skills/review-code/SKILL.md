@@ -83,6 +83,10 @@ confirmation dialog where undo belongs; contrast failing in dark mode.
 
 **Tests** — new behaviour untested; a test asserting the middle of a window
 instead of its boundaries; a test that would still pass with the feature deleted;
+**a test whose name claims a property its assertion does not exercise** — plant
+the bug the name describes and watch it fail (step 6a: "anon cannot mint a feed"
+passed on the function body's `if` while `anon` held the grant, and "same tasks
+as the screens" never compared the two);
 an engine change never run under a non-UTC timezone; **a gate whose violation was
 only ever planted by hand** — the planting belongs in the test, or the gate dies
 with the terminal session that verified it; **a scan that covers less than it

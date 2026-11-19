@@ -11,6 +11,85 @@ log from step 0 onward.**
 
 ---
 
+## 2026-11-19 · step 6a · a calendar feed, an installable app, and a CSP
+
+Step 6 split into 6a and 6b: 6a is everything that needs no scheduler, and it
+is done. Learning file:
+[`learnings/2026-11-19-step-6a-calendar-pwa-csp.md`](learnings/2026-11-19-step-6a-calendar-pwa-csp.md).
+
+364 tests → 402. 94 pgTAP assertions → 125. Playwright 24 → 29. Step 5a and
+seven Dependabot updates were merged to `main` along the way.
+
+### Decided
+
+- **A read without a session is one token-scoped `SECURITY DEFINER` function,
+  called as `anon`** — never the service-role key.
+  [ADR-0009](adr/0009-token-scoped-reads-without-a-session.md). The account
+  owner approved the pattern; it is the template for step 15's share links.
+  Its function returns only what a leaked token must grant, with the key set
+  pinned in pgTAP.
+- **`calendar_feed` is written only through functions that audit in the same
+  transaction**, with no direct write privilege and restrictive `false`
+  policies behind that — the shape step 9 will retrofit onto every other
+  household table.
+- **Full event titles in the calendar**, chosen by the account owner over
+  generic ones, with the privacy warning shown before the link exists.
+- **`anon` holds no execute on any member-only function**, and the schema
+  default no longer grants it. Found by the security review; it had been true
+  since step 1.
+- **Serwist through `@serwist/turbopack`**, with no webpack config; the worker
+  precaches build assets and the two offline pages and caches no household
+  page, asserted in a browser.
+- **A nonce-based CSP** with no `'unsafe-inline'` in `script-src`;
+  `style-src` keeps it as a named trade.
+- **Dependabot updates land as one tested PR** when they share the lockfile.
+
+### Open
+
+**For you:**
+
+- **The step 6b decision: how a job with no user reads every household** for
+  the daily push and the Sunday digest. My lean: a job secret whose hash lives
+  in the database, checked by one `SECURITY DEFINER` function that returns
+  only what a reminder needs — the same shape as ADR-0009. The alternative is a
+  dedicated narrow database role. Never the service-role key on a request path.
+- **Accept or drop the `chore(ai):` commit** at the head of this branch:
+  `/review-code` gains "plant the bug a test is named after", and
+  `packages/db/CLAUDE.md` teaches revoking function execute from `anon` by name
+  and asserting it with `has_function_privilege()`. Hard rule 1 gains ADR-0009's
+  clause.
+- **The migration guard** (`.claude/hooks/migration-guard.sh`) demands
+  `with check` whenever a policy exists, even when every policy is
+  `for select`. A session should not loosen its own gate, so this is yours to
+  change or leave.
+- **Still carried from 5a, unchanged:** the Supabase and Vercel accounts for
+  5b, `./scripts/setup-branch-protection.sh` from your own machine, the
+  Hebrew review, and email + password in production.
+- **Check one thing on your iPhone** once 5b is live: whether a subscribed
+  Kenn calendar shows its reminders after unticking "Remove alerts".
+
+**Carried, with reasons:**
+
+- **An MCP client could mint a calendar feed** if it ever reaches PostgREST
+  with a user JWT: `assertHuman` holds in `apps/web` only. Step 9 has to decide
+  the claim that marks a non-human token, and make `create_calendar_feed`,
+  `revoke_calendar_feed` and invite creation refuse it in SQL. The same step
+  closes the pre-existing hole that `audit_log` accepts a member-written
+  `actor_kind = 'mcp'` row.
+- **The proxy matcher skips any path containing a dot**, so a future
+  `/checklist/preg.nt-scan` page would get no CSP, session refresh or locale.
+  Fix it with the first such route.
+- **No rate limits** on feed creation or on `/api/ics`. 256-bit tokens make
+  brute force moot; volume is the concern, and 5b's hosting decides where a
+  limit lives.
+
+### Next
+
+**Step 6b** once its decision above is made, or **5b** the moment the accounts
+exist. Step 7 (the safety centre) and step 8a are also unblocked.
+
+---
+
 ## 2026-11-15 · step 5a · the app, against a database that now enforces its own rules
 
 Step 5 split into 5a and 5b the way step 8 was split; 5a is everything that runs

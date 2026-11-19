@@ -93,7 +93,7 @@ flowchart LR
       decision is what is **not** there: no `task_instance` table, because a
       window is day offsets from an anchor and the engine derives it at read
       time ([ADR-0008](../adr/0008-derive-windows-store-only-decisions.md)).
-      Only the two Serwist entries remain in `knip.json`'s
+      Only the two Serwist entries remained in `knip.json`'s
       `ignoreDependencies`. The two reviews then found what the step had got
       wrong, and both were the same shape — a guarantee true of `apps/web` and
       false of the database: every policy was `for all`, so one authenticated
@@ -116,9 +116,56 @@ flowchart LR
       Needs the hosted Supabase project and the Vercel account, so it shares its
       blockers with step 1. **Gate A's "both phones have the PWA installed from
       production" cannot be ticked until this lands.**
-- [ ] **6.** Reminders: Web Push, the Sunday digest and the ICS calendar feed.
-      **Risk:** Serwist integrates through a webpack plugin and Next.js 16 fails
-      the build on a custom webpack config. Verify early.
+- [x] **6a.** The calendar feed, the installable PWA and the CSP. Step 6 was
+      split in two on 2026-11-19: everything here works without a scheduled
+      job, and 6b is that job and what it sends. _(2026-11-19 —
+      `calendar_feed`, the first table nobody writes directly: no insert,
+      update or delete privilege for `authenticated` or `anon`, restrictive
+      `false` policies behind that, and three `SECURITY DEFINER` functions that
+      write their `audit_log` row in the same transaction — the shape ADR-0008
+      prescribes for step 9, used from the first migration. The token is 256
+      bits minted in SQL and only its SHA-256 hash is stored, unreadable to
+      members; a feed expires after a year, and making a new one revokes the
+      maker's last. The calendar's servers fetch `GET /api/ics/<token>` with no
+      session, so the route calls `calendar_feed_inputs(token)` as `anon` with
+      the publishable key, never the service-role key, and turns malformed,
+      unknown, revoked and expired tokens into the same bare 404
+      ([ADR-0009](../adr/0009-token-scoped-reads-without-a-session.md)).
+      `composeTasks()` came out of `services/tasks.ts` with no I/O, so the
+      Checklist and the feed derive their windows from one function and cannot
+      disagree. `lib/ics.ts` is Kenn's own RFC 5545 writer — octet folding
+      that never splits a Hebrew letter, an exclusive all-day `DTEND`, stable
+      UIDs, alarms at 09:00 on the opening day and three days before the
+      close. Events carry full titles, which the account owner chose over
+      generic ones, and the Household page says they leave Kenn before the
+      link exists. The PWA: a service worker from `@serwist/turbopack` 9.5.13
+      that precaches the build's assets and `/he/offline` and `/en/offline`
+      and nothing else — every navigation is network-only and no household
+      page is cached — registered in production only; `app/manifest.ts` with
+      its colours read from `tokens.css`; four icons from
+      `scripts/gen-icons.mjs`. A nonce-based CSP per request from `lib/csp.ts`
+      and `proxy.ts`: no `'unsafe-inline'` in `script-src`, and `style-src`
+      keeps it as a named trade. Step 6's Serwist risk did not happen:
+      `@serwist/turbopack` bundles the worker with esbuild inside a Route
+      Handler at build time, so there is still no webpack config,
+      `@serwist/next` is gone and `knip.json` has no `ignoreDependencies`
+      left. The security review then found `anon` holding execute on every
+      function in `public` — Supabase grants it by name in its default
+      privileges, and `revoke ... from public` left that standing, so each
+      member-only function refused `anon` with one `if` and nothing else. Now
+      the grant is revoked by name and no longer the default, and
+      `calendar_feed_inputs()` returns only what a leaked token must grant: a
+      per-feed UID salt instead of the household id, the one date the dating
+      method uses, and the ids of decided items without their state. A feed
+      also dies with its creator's membership. 125 pgTAP assertions, 395 unit
+      tests, 29 end-to-end tests.
+      `docs/learnings/2026-11-19-step-6a-calendar-pwa-csp.md`)_
+- [ ] **6b.** Reminders: Web Push subscriptions, the daily push, the Sunday
+      digest, and the scheduled job that sends them. Carries one open decision:
+      **how a job with no user reads every household.** ADR-0009's
+      token-scoped function serves one household per token and does not fit.
+      The lean is a job secret whose hash lives in the database, or a dedicated
+      narrow database role — never the service-role key on a request path.
 - [ ] **7.** Safety center v1: offline emergency card, red-flag cards, safe-sleep
       and shelter checklists, car automation guide.
 - [ ] **8a.** Things, the mechanism: `kind: thing` in the KB schema with the
@@ -140,8 +187,9 @@ flowchart LR
 
 - [ ] Both phones have the PWA installed from production
 - [ ] A window has opened, been reminded, and been ticked by each parent
-- [ ] No entry left in `knip.json`'s `ignoreDependencies` for a dependency
-      nothing imports
+- [x] No entry left in `knip.json`'s `ignoreDependencies` for a dependency
+      nothing imports _(2026-11-19, step 6a: `knip.json` has no
+      `ignoreDependencies` left in any workspace)_
 - [ ] Every catalogue item marked `unsafe` or `discouraged` cites a named
       authority and a source URL, and none can be added to a list without an
       explicit acknowledgement

@@ -34,7 +34,7 @@ async function householdWithInvite(browser: Browser): Promise<{
 
   await page.goto('/he/household');
   await page.getByLabel('הדוא״ל של ההורה השני').fill(newEmail('parent-b'));
-  await page.getByRole('button', { name: 'צרי קישור' }).click();
+  await page.getByRole('button', { name: 'צרי קישור', exact: true }).click();
 
   const shown = await page.getByRole('textbox', { name: 'הקישור מוכן' }).inputValue();
   expect(shown).toMatch(/\/he\/join\/[0-9a-f]{64}$/);

@@ -1,6 +1,12 @@
-import { isLocale } from '@kenn/ui';
+import { formatTimestampDate, isLocale } from '@kenn/ui';
 import { InviteForm } from '@/app/[locale]/(app)/household/invite-form.tsx';
-import { revokeInviteAction } from '@/app/[locale]/(app)/actions.ts';
+import { CalendarForm } from '@/app/[locale]/(app)/household/calendar-form.tsx';
+import {
+  revokeCalendarFeedAction,
+  revokeInviteAction,
+} from '@/app/[locale]/(app)/actions.ts';
+import { listCalendarFeeds } from '@/lib/services/calendar.ts';
+import { hasPassed } from '@/lib/today.ts';
 import { requireUserContext } from '@/lib/services/context.ts';
 import { currentHouseholdAndMember, householdMembers } from '@/lib/services/household.ts';
 import { listInvites } from '@/lib/services/invites.ts';
@@ -27,10 +33,20 @@ export default async function HouseholdPage({
   if (!current) notFound();
   const { household, member: me } = current;
 
-  const [members, invites] = await Promise.all([
+  const [members, invites, feeds] = await Promise.all([
     householdMembers(ctx, household.id),
     listInvites(ctx, household.id),
+    listCalendarFeeds(ctx, household.id),
   ]);
+  const tc = await getTranslations('calendar');
+
+  // The caller's own live feed: each parent subscribes their own calendar.
+  // An expired feed is not live: the route already answers 404 for it, and
+  // saying "active" would let a parent trust a calendar that stopped updating.
+  const myFeed = feeds.find(
+    (feed) =>
+      feed.createdBy === me.userId && !feed.revokedAt && !hasPassed(feed.expiresAt),
+  );
 
   const open = invites.filter((invite) => !invite.acceptedAt && !invite.revokedAt);
 
@@ -95,6 +111,41 @@ export default async function HouseholdPage({
             ))}
           </ul>
         )}
+      </section>
+
+      <section aria-labelledby="calendar" className="flex flex-col gap-2">
+        <h2 id="calendar" className="text-lg font-semibold">
+          {tc('title')}
+        </h2>
+        <p className="text-text-muted text-sm">{tc('help')}</p>
+        <p className="border-border bg-surface-sunken rounded-md border p-2 text-sm">
+          {tc('privacy')}
+        </p>
+
+        {myFeed ? (
+          <div className="border-border flex min-h-(--size-tap) flex-wrap items-center justify-between gap-2 rounded-md border px-2">
+            <span className="text-sm">
+              {tc('active', {
+                created: formatTimestampDate(myFeed.createdAt, locale),
+                expires: formatTimestampDate(myFeed.expiresAt, locale),
+              })}
+            </span>
+            <form action={revokeCalendarFeedAction}>
+              <input type="hidden" name="feedId" value={myFeed.id} />
+              <button type="submit" className="min-h-(--size-tap) px-2 text-sm underline">
+                {tc('revoke', genderValues(me.genderForm))}
+              </button>
+            </form>
+          </div>
+        ) : (
+          <p className="text-text-muted text-sm">{tc('none')}</p>
+        )}
+
+        <CalendarForm
+          locale={locale}
+          genderForm={me.genderForm}
+          hasLiveFeed={myFeed !== undefined}
+        />
       </section>
     </main>
   );

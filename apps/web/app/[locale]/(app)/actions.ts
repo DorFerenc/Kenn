@@ -10,10 +10,15 @@
  * whatever the browser says it is.
  */
 
+import {
+  createCalendarFeedSchema,
+  revokeCalendarFeedSchema,
+} from '@/lib/schemas/calendar.ts';
 import { inviteSchema } from '@/lib/schemas/invite.ts';
 import { taskDecisionSchema } from '@/lib/schemas/task.ts';
 import { requireUserContext } from '@/lib/services/context.ts';
 import { createInvite, revokeInvite } from '@/lib/services/invites.ts';
+import { createCalendarFeed, revokeCalendarFeed } from '@/lib/services/calendar.ts';
 import { currentHousehold } from '@/lib/services/household.ts';
 import { decideTask } from '@/lib/services/tasks.ts';
 import { revalidatePath } from 'next/cache';
@@ -73,5 +78,36 @@ export async function revokeInviteAction(formData: FormData): Promise<void> {
 
   const { ctx, householdId } = await household();
   await revokeInvite(ctx, householdId, inviteId);
+  revalidatePath('/[locale]/(app)/household', 'page');
+}
+
+export interface CalendarFormState {
+  /** The raw feed token, shown once. Never stored and never logged. */
+  token?: string;
+}
+
+/** The feed is written in the language of the page it was made from. */
+export async function createCalendarFeedAction(
+  _previous: CalendarFormState,
+  formData: FormData,
+): Promise<CalendarFormState> {
+  const parsed = createCalendarFeedSchema.safeParse({ locale: formData.get('locale') });
+  if (!parsed.success) throw new Error('invalid locale');
+
+  const { ctx, householdId } = await household();
+  const token = await createCalendarFeed(ctx, householdId, parsed.data.locale);
+
+  revalidatePath('/[locale]/(app)/household', 'page');
+  return { token };
+}
+
+export async function revokeCalendarFeedAction(formData: FormData): Promise<void> {
+  const parsed = revokeCalendarFeedSchema.safeParse({ feedId: formData.get('feedId') });
+  if (!parsed.success) throw new Error('invalid feed id');
+
+  // The function checks membership itself; reading the household here keeps
+  // the "who is signed in" check in the same place as every other action.
+  const { ctx } = await household();
+  await revokeCalendarFeed(ctx, parsed.data.feedId);
   revalidatePath('/[locale]/(app)/household', 'page');
 }

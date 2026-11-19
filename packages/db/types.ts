@@ -43,6 +43,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"calendar_feed": {
+                  Row: {
+                    "created_at": string,"created_by": string,"expires_at": string,"household_id": string,"id": string,"locale": string,"revoked_at": string | null,"token_hash": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by": string,"expires_at"?: string,"household_id": string,"id"?: string,"locale": string,"revoked_at"?: string | null,"token_hash": string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string,"expires_at"?: string,"household_id"?: string,"id"?: string,"locale"?: string,"revoked_at"?: string | null,"token_hash"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "calendar_feed_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: false
+      referencedRelation: "household"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"household": {
                   Row: {
                     "country": string,"created_at": string,"default_locale": string,"id": string,"name": string
@@ -166,11 +186,20 @@ isOneToOne: false
             "accept_invite":
 { Args: { "p_token": string }; Returns: string
                            },
+"calendar_feed_inputs":
+{ Args: { "p_token": string }; Returns: Json
+                           },
+"create_calendar_feed":
+{ Args: { "p_household": string,"p_locale": string }; Returns: string
+                           },
 "create_household":
 { Args: { "p_locale"?: string,"p_name": string }; Returns: string
                            },
 "is_member":
 { Args: { "h": string }; Returns: boolean
+                           },
+"revoke_calendar_feed":
+{ Args: { "p_feed": string }; Returns: undefined
                            }
           }
           Enums: {

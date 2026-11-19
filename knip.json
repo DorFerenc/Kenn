@@ -6,8 +6,7 @@
       "ignoreBinaries": ["supabase"]
     },
     "apps/web": {
-      "entry": ["e2e/**/*.spec.ts"],
-      "ignoreDependencies": ["@serwist/next", "serwist"]
+      "entry": ["e2e/**/*.spec.ts", "worker/sw.ts", "scripts/*.mjs"]
     }
   }
 }

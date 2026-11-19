@@ -32,8 +32,8 @@ import {
 import { nowTimestamp } from '../today.ts';
 import { recordAudit } from './audit.ts';
 import type { ServiceContext } from './context.ts';
-import { getPregnancy, pregnancyInput } from './pregnancy.ts';
-import { engineProfile, getProfile } from './profile.ts';
+import { getPregnancy, pregnancyInput, type Pregnancy } from './pregnancy.ts';
+import { engineProfile, getProfile, type ProfileWrite } from './profile.ts';
 
 /** What a parent decided. `open` is an explicit reopen, not an absent row. */
 export type TaskDecision = 'done' | 'skipped' | 'open';
@@ -91,7 +91,25 @@ export async function listTasks(
     getProfile(ctx, householdId),
     taskStates(ctx, householdId),
   ]);
+  return composeTasks({ pregnancy, profile, states }, today);
+}
 
+/** Everything a household's tasks are derived from: two reads and a decision map. */
+export interface HouseholdInputs {
+  pregnancy: Pregnancy | null;
+  profile: ProfileWrite | null;
+  states: Map<string, StoredDecision>;
+}
+
+/**
+ * The checklist, from its inputs, with no I/O.
+ *
+ * The screens and the calendar feed (step 6a) both end here, so a window in
+ * someone's calendar and the same window on the Checklist cannot disagree —
+ * which is the certainty ADR-0008 traded a stored `task_instance` table for.
+ */
+export function composeTasks(inputs: HouseholdInputs, today: IsoDate): TaskView[] {
+  const { pregnancy, profile, states } = inputs;
   if (!pregnancy) return [];
 
   const instances = materialize(
@@ -145,10 +163,11 @@ function decisionStatus(
   return timeStatus;
 }
 
-interface StoredDecision {
+export interface StoredDecision {
   decision: TaskDecision;
-  decidedBy: string;
-  decidedAt: string;
+  /** Null when the decision arrives without its author — the calendar feed. */
+  decidedBy: string | null;
+  decidedAt: string | null;
   kbVersion: number;
 }
 

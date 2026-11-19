@@ -87,6 +87,12 @@ classDiagram
     +Date expiresAt
     +revoke()
   }
+  class CalendarFeed {
+    +string tokenHash
+    +Locale locale
+    +Date expiresAt
+    +revoke()
+  }
   class McpClient {
     +string name
     +List~Scope~ scopes
@@ -105,6 +111,7 @@ classDiagram
   Household "1" --> "*" TaskState
   Household "1" --> "*" InventoryItem
   Household "1" --> "*" ShareGrant
+  Household "1" --> "*" CalendarFeed
   Household "1" --> "*" McpClient
   Household "1" --> "*" AuditEntry
   KbItem *-- Window

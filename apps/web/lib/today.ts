@@ -44,6 +44,11 @@ export function nowTimestamp(): string {
   return new Date().toISOString();
 }
 
+/** Whether an instant (an ISO timestamp from Postgres) is already behind us. */
+export function hasPassed(timestamp: string): boolean {
+  return Date.parse(timestamp) <= Date.now();
+}
+
 /** An instant `days` from now, for an invite's expiry. */
 export function timestampInDays(days: number): string {
   return new Date(Date.now() + days * MILLISECONDS_PER_DAY).toISOString();
