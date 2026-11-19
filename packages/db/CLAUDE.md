@@ -63,6 +63,16 @@ table claiming the same exemption needs its own ADR. Note that an `UPDATE` with
 no matching policy reports zero rows rather than raising, so the refusal has to
 be asserted or it is invisible.
 
+**Functions: revoke from `anon` by name, and assert the privilege.** Supabase's
+default privileges grant execute on a new function to `anon` _by name_, so
+`revoke all on function f from public` leaves `anon` able to call it — every
+member-only function was callable that way until step 6a's security review.
+The schema default is fixed now (`20261119050902`), but write
+`revoke ... from public, anon` anyway, grant only what is meant, and test it with
+`has_function_privilege('anon', 'public.f(args)', 'execute')`: a `throws_ok`
+passes on the body's own `auth.uid() is null` refusal whether the grant exists
+or not. A function `anon` may call is an API — pin the keys it returns.
+
 ## Migrations
 
 - One migration per change, named `<timestamp>_<verb>_<thing>.sql`. Create it with

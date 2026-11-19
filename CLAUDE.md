@@ -20,7 +20,9 @@ These are not style preferences. A PR that breaks one does not merge.
 1. **Only `apps/web/lib/services` touches the database**, always with the signed-in
    user's JWT — never the service-role key. The UI, share pages, the MCP route and
    the coach all call that one service layer, so RLS guards AI exactly as it guards
-   a parent.
+   a parent. A read with no session (a calendar feed, a share link) is one
+   token-scoped `security definer` function called as `anon` — still never the
+   service-role key (ADR-0009).
 2. **Every new household table ships with RLS and a pgTAP test in the same PR.**
    Default deny. The test signs in as a member of household A and asserts zero rows
    from household B for select, insert, update and delete. A new table without that
