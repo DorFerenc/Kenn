@@ -6,13 +6,11 @@ Serwist without webpack, an installable and offline-aware app, a nonce-based
 Content-Security-Policy, and the private ICS calendar feed — the first read in
 Kenn made without a signed-in user.
 
-**Outcome:** built and green before review: 395 unit tests (from 364), 115
-pgTAP assertions (from 94), 29 Playwright tests (from 24). The session also
-merged step 5a (pull request 13) and folded seven Dependabot PRs into one
-(pull request 15).
-
-_The review section below is written after the reviewer and
-security-reviewer report._
+**Outcome:** done. 402 unit tests (from 364), 125 pgTAP assertions (from 94),
+29 Playwright tests (from 24), `pnpm check` green. The session also merged
+step 5a (pull request 13) and folded seven Dependabot PRs into one (pull
+request 15). Built and green at 395 / 115 / 29 before review; the two reviews
+then found one High and six Medium, all fixed, and nothing Critical.
 
 ## The named risk was already gone, and only the package source said so
 
@@ -88,11 +86,66 @@ the tests; the two labels are distinct enough for a person.
 
 ## Environment
 
-The worker process restarted twice and stopped Docker each time; usage limits
+The worker process restarted three times and stopped Docker each time, taking two background review agents with it once; usage limits
 paused the session twice. Nothing was lost because every finished piece had
 been committed and pushed before the pause. **Push at every green commit** is
 worth more in a container that can disappear than any amount of care inside
 one turn.
+
+## The reviews: three tests that passed for the wrong reason
+
+The security review's central finding is the same shape as step 5a's, one
+layer down. **`anon` could execute every function in `public`.** Supabase's
+base schema grants execute on new functions to `anon` _by name_ in its default
+privileges, and every migration in this repository — mine and four earlier
+ones — wrote `revoke all ... from public`, which removes the PUBLIC grant and
+leaves the named one standing. Verified with `has_function_privilege()` against
+the local stack before touching anything: true for `create_household`,
+`accept_invite`, `create_calendar_feed` and `revoke_calendar_feed`. Nothing was
+reachable, because each body refuses a null `auth.uid()` — but **the pgTAP
+test "anon cannot mint a feed" passed on that `if`, not on a privilege**, so it
+would have stayed green with the grant in place. It now asserts privileges.
+
+The code review found two more of the same kind in my own tests:
+
+- **"Gives the same tasks as the screens"** asserted a count and that anti-D
+  was absent. It never compared the feed with the Checklist, and the fixture
+  used only LMP dating, so swapping the `edd` and `transfer_date` branches
+  passed every test. Rewritten per dating method; the swap, planted by hand,
+  now fails two cases.
+- **"Keeps a reopened item"** ran the default fixture under a new name.
+
+All three are a test whose name claims a property its assertion does not
+exercise. That is Rules learned #1 again — ask what a gate cannot see — and it
+has a mechanical form worth writing into `/review-code`: **plant the bug the
+test is named after, and watch it fail.** I did that for the parity test only
+after the reviewer pointed out the others.
+
+The other findings worth keeping:
+
+- **`calendar_feed_inputs()` said more than the calendar needs.** I wrote it
+  for the route, but it is reachable over PostgREST by anyone holding a token,
+  so its _result_ is what a leaked token grants — household id, every decision
+  and its state, all three dating columns. Now: a per-feed salt, the one date
+  the dating method uses, the ids of decided items, and a key set pinned in
+  pgTAP. **A function granted to `anon` is an API, whatever route it was
+  written for.**
+- **The route swallowed every error without a log** — so the zod parse I wrote
+  "to fail loudly" would have failed silently, as a permanent 503 for every
+  subscriber. A comment promising loudness is not loudness.
+- **One tap after making a link revoked it.** The button above the fresh link
+  re-rendered as "create a new link". Nothing in a unit test or a reading of
+  the code shows this; the reviewer imagined a person.
+- **Apple strips alerts from a subscribed calendar by default**, so the help
+  text promised reminders the default setup will not show. The copy now says
+  to untick "Remove alerts". Not verified on a device from here.
+
+Left open, each with its step: the AI-actor claim that would let
+`create_calendar_feed` refuse an MCP client in SQL (step 9, with the
+pre-existing hole that `audit_log` accepts a member-written `actor_kind =
+'mcp'` row); the proxy matcher skipping any path with a dot, which a future
+`/checklist/preg.nt-scan` route would hit; and rate limits on feed creation and
+the route.
 
 ## Decisions taken
 
@@ -113,9 +166,18 @@ one turn.
 
 ## Rule candidates
 
-| Candidate                                                                                                                      | Automatable? | Status                                                                                                                               |
-| ------------------------------------------------------------------------------------------------------------------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| "A library default is a decision made for a different app" — read what a cache/registration default stores before accepting it | partly       | first occurrence — proposed for `review-code`'s checklist under "health data at rest"                                                |
-| "The migration guard's `with check` rule should apply only when a policy can write"                                            | yes          | first occurrence — proposed for the user, since a session should not loosen its own gate; the restrictive policies made it moot here |
-| "Read the existing test for a flow before writing a new one that drives it"                                                    | no           | first occurrence                                                                                                                     |
-| "Push at every green commit"                                                                                                   | partly       | first occurrence — the environment restarted twice                                                                                   |
+| Candidate                                                                                            | Automatable? | Status                                                                                                                                                      |
+| ---------------------------------------------------------------------------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "Plant the bug a test is named after, and watch it fail"                                             | partly       | **third occurrence of the family** (step 2's colour scan, step 5a's i18n scan and fake client, now three tests here) — proposed as a line in `/review-code` |
+| "Revoke function execute from `anon` by name, and assert privileges with `has_function_privilege()`" | yes          | first occurrence, but `packages/db/CLAUDE.md` teaches the pattern every migration copies, so it is corrected there now; the schema default is fixed in SQL  |
+| "A function granted to `anon` is an API: its result is what a leaked token grants"                   | partly       | first occurrence — the key set is pinned in pgTAP; stays here                                                                                               |
+| "A library default is a decision made for a different app"                                           | partly       | first occurrence — stays here                                                                                                                               |
+| "The migration guard's `with check` rule should apply only when a policy can write"                  | yes          | first occurrence — for the account owner: a session should not loosen its own gate, and the permission classifier refused the edit                          |
+| "Read the existing test for a flow before writing a new one that drives it"                          | no           | first occurrence                                                                                                                                            |
+| "Push at every green commit"                                                                         | partly       | first occurrence — the worker restarted three times this session                                                                                            |
+
+## Next
+
+**Step 6b** (Web Push, the daily push, the Sunday digest, and the job) once its
+open decision is made — or **5b** the moment the Supabase and Vercel accounts
+exist.
