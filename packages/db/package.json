@@ -17,7 +17,7 @@
     "db:test": "supabase test db --workdir ."
   },
   "devDependencies": {
-    "supabase": "3.1.0",
+    "supabase": "3.2.0",
     "typescript": "6.0.3"
   }
 }
